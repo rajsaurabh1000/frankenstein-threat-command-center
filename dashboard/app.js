@@ -129,14 +129,16 @@ function connectWs() {
     } else if (data.type === "system") {
       prependFeedItem({
         event: {
-          event_type: "SYSTEM",
-          origin: "SOC",
+          event_type: data.payload.message || "MITIGATION",
+          origin: "SOC-CONSOLE",
           source: "live",
           severity: 1,
         },
         score: 0,
         threat_level: "LOW",
       });
+      mitigateBtn.disabled = true;
+      mitigateBtn.textContent = "NEUTRALIZED";
       refreshBrief();
     } else if (data.type === "brief") {
       briefText.textContent = data.payload.text;
