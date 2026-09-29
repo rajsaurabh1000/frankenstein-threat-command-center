@@ -189,8 +189,11 @@ async def background_ingest() -> None:
 
     async def posture_loop() -> None:
         """The landscape decays between events (e.g. after containment); keep gauge and brief in step."""
+        global contained_flag
         while not _stop_background:
             await asyncio.sleep(2.0)
+            if contained_flag and not STOP_PATH.exists():
+                contained_flag = False  # stop flag cleared (hosted demo auto-resume)
             stamp = brief_gen.updated_at
             await brief_gen.maybe_refresh(
                 list(recent_scored), scorer.global_threat_level(), scorer.global_score

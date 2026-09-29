@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r bridge/requirements.txt -r bridge/requirements-dev.txt
+      - run: python -m pytest -q
+
+  container-smoke:
+    # Builds the all-in-one image used for hosted demos and drives the real flow through it:
+    # C# + PowerShell telemetry -> bridge -> CRITICAL -> Contain stops AttackSim -> Inject restarts it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -f deploy/Dockerfile -t tcc-demo .
+      - name: Start container
+        run: docker run -d --name tcc -p 8000:8000 tcc-demo
+      - name: Wait for both telemetry sources
+        run: |
+          ok='import sys,json; h=json.load(sys.stdin); s={v["component"]:v["status"] for v in h.values() if isinstance(v,dict)}; print(s); sys.exit(0 if s.get("Legacy API")=="ONLINE" and s.get("Live Telemetry")=="ONLINE" else 1)'
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8000/api/health | python3 -c "$ok" && exit 0
+            sleep 2
+          done
+          docker logs tcc; exit 1
+      - name: UI and assets are served
+        run: |
+          for u in / /static/app.mjs /static/vendor/vue.esm-browser.js /static/assets/narration/index.json /favicon.ico; do
+            curl -sf -o /dev/null "http://127.0.0.1:8000$u" && echo "200 $u"
+          done
+      - name: Inject critical -> gauge CRITICAL
+        run: |
+          curl -sf -X POST http://127.0.0.1:8000/api/demo/scenario -H 'content-type: application/json' -d '{"scenario":"critical"}'
+          sleep 3
+          curl -sf http://127.0.0.1:8000/api/state | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['threat_level'], d['global_score']); assert d['threat_level']=='CRITICAL'"
+      - name: Contain -> AttackSim halts
+        run: |
+          curl -sf -X POST http://127.0.0.1:8000/api/contain
+          for i in $(seq 1 15); do docker logs tcc 2>&1 | grep -q "attack simulation halted" && { echo "AttackSim halted"; exit 0; }; sleep 1; done
+          docker logs tcc; exit 1
+      - name: Inject -> AttackSim restarts
+        run: |
+          curl -sf -X POST http://127.0.0.1:8000/api/demo/scenario -H 'content-type: application/json' -d '{"scenario":"normal"}'
+          for i in $(seq 1 20); do
+            [ "$(docker logs tcc 2>&1 | grep -c 'Starting Cyber Attack Simulation')" -ge 2 ] && { echo "AttackSim restarted"; exit 0; }
+            sleep 1
+          done
+          docker logs tcc; exit 1
+      - name: Container logs
+        if: always()
+        run: docker logs tcc 2>&1 | tail -60

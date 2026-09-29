@@ -5,6 +5,8 @@
 
 Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Frankenstein)
 
+[![CI](https://github.com/rajsaurabh1000/frankenstein-threat-command-center/actions/workflows/ci.yml/badge.svg)](https://github.com/rajsaurabh1000/frankenstein-threat-command-center/actions/workflows/ci.yml)
+
 ![Threat Command Center — critical posture](docs/screenshots/command-center-critical.png)
 
 ---
@@ -426,6 +428,14 @@ pwsh -File chaos/AttackSim.ps1
 
 A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included (`docker compose up`, then open http://127.0.0.1:8000). The legacy API binds to loopback by default and honors `--urls` / `ASPNETCORE_URLS`, which Compose uses to bind `0.0.0.0`. `./scripts/start-demo.sh` remains the primary, end-to-end-tested path.
 
+### Hosted demo (single container)
+
+[`deploy/Dockerfile`](deploy/Dockerfile) packages all three components into one image: the published ASP.NET API, the Python bridge (which serves the UI), and PowerShell running `AttackSim.ps1`. [`deploy/entrypoint.sh`](deploy/entrypoint.sh) starts them together. A supervisor restarts AttackSim after an Inject clears containment, and `DEMO_AUTO_RESUME_SECONDS` lets a shared public demo un-contain itself so it is never frozen for the next visitor.
+
+[`render.yaml`](render.yaml) deploys it as a free Render web service (WebSockets supported): **Render → New → Blueprint → select this repo**. The public service runs the AI in template mode (`LLM_BRIEF_ENABLED=false`), so nobody on the internet can spend an API key. Free instances sleep when idle, so the first request after a pause takes about a minute.
+
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the test suite and builds this image on every push. It then drives the real flow through the running container: both sources ONLINE → inject → CRITICAL → Contain halts AttackSim → Inject restarts it.
+
 ---
 
 ## 11. Resilience & graceful degradation
@@ -520,6 +530,7 @@ frankenstein-threat-command-center/
 │   ├── vendor/vue.esm-browser.js
 │   └── assets/              #   logos, architecture SVG, Lumi, pre-generated narration MP3s
 ├── tests/                   # pytest: scorer, dedup, adapters, API end to end
+├── deploy/                  # all-in-one Dockerfile + entrypoint for hosted demos (render.yaml at root)
 ├── scripts/
 │   ├── start-demo.sh        # one-command local demo
 │   ├── generate-narration.sh

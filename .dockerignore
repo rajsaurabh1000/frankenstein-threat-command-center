@@ -1,0 +1,12 @@
+.git
+.env
+**/.venv
+.venv-test
+**/__pycache__
+.pytest_cache
+data/*
+!data/.gitkeep
+legacy/bin
+legacy/obj
+docs
+tests

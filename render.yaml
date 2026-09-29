@@ -1,0 +1,17 @@
+# Render Blueprint — one free Docker web service running the full stack.
+services:
+  - type: web
+    name: frankenstein-threat-command-center
+    runtime: docker
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DEMO_AUTO_RESUME_SECONDS
+        value: "90"
+      - key: LLM_BRIEF_ENABLED
+        value: "false"   # public URL: keep AI in template mode so nobody can spend an API key
+      - key: DEPLOY_ENV
+        value: demo
