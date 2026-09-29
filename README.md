@@ -11,7 +11,7 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 
 ## Table of contents
 
-1. [TL;DR — run it in 60 seconds](#1-tldr--run-it-in-60-seconds)
+1. [Run it in 60 seconds](#1-run-it-in-60-seconds)
 2. [Deliverables checklist](#2-deliverables-checklist)
 3. [How it maps to the evaluation criteria](#3-how-it-maps-to-the-evaluation-criteria)
 4. [Architecture](#4-architecture)
@@ -31,7 +31,7 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 
 ---
 
-## 1. TL;DR — run it in 60 seconds
+## 1. Run it in 60 seconds
 
 ### Prerequisites
 
