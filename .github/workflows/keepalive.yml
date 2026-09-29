@@ -1,0 +1,14 @@
+name: Keep live demo warm
+
+# Render's free tier sleeps after ~15 idle minutes (≈1 min cold start). Pinging keeps the public
+# demo instant for reviewers; one always-on free service fits within Render's 750 free hours/month.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 90 --retry 2 https://frankenstein-threat-command-center.onrender.com/api/health > /dev/null

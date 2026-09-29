@@ -12,7 +12,11 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 > Interactive and real time, with no installation. All three components (ASP.NET, Python, PowerShell) run in one container on Render's free tier.
 > The first visit after a quiet period can take about a minute while the instance wakes up. On the public URL the AI runs in template mode, and a contained demo automatically resumes after 90 s.
 
-![Threat Command Center — critical posture](docs/screenshots/command-center-critical.png)
+**30-second tour:** click **Skip to dashboard** (or **Play overview** for the narrated architecture) → watch the gauge flash **red** on each high-severity AttackSim hit → press **Inject** in the bottom dock, pick **Critical Attack**, then **Inject campaign**: the gauge locks **CRITICAL** and the brief updates → press **Contain** in the dock: the PowerShell attacker stops and the gauge falls to LOW.
+
+![Live demo: the gauge flashes red on a severity-9 AttackSim hit, Inject locks it CRITICAL, Contain drops it](docs/screenshots/live-demo.gif)
+
+<sub>Recorded from the live site: a red flash from a high-severity AttackSim hit → back to HIGH → Inject (Critical) → CRITICAL 85 → Contain → decay.</sub>
 
 ---
 
@@ -438,7 +442,7 @@ A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included
 
 [`deploy/Dockerfile`](deploy/Dockerfile) packages all three components into one image: the published ASP.NET API, the Python bridge (which serves the UI), and PowerShell running `AttackSim.ps1`. [`deploy/entrypoint.sh`](deploy/entrypoint.sh) starts them together. A supervisor restarts AttackSim after an Inject clears containment, and `DEMO_AUTO_RESUME_SECONDS` lets a shared public demo un-contain itself so it is never frozen for the next visitor.
 
-[`render.yaml`](render.yaml) deploys it as a free Render web service (WebSockets supported): **Render → New → Blueprint → select this repo**. The public service runs the AI in template mode (`LLM_BRIEF_ENABLED=false`), so nobody on the internet can spend an API key. Free instances sleep when idle, so the first request after a pause takes about a minute.
+[`render.yaml`](render.yaml) deploys it as a free Render web service (WebSockets supported): **Render → New → Blueprint → select this repo**. The public service runs the AI in template mode (`LLM_BRIEF_ENABLED=false`), so nobody on the internet can spend an API key. Free instances sleep when idle. A scheduled workflow ([`.github/workflows/keepalive.yml`](.github/workflows/keepalive.yml)) pings the service every 10 minutes to keep it warm, but GitHub may delay scheduled runs, so a cold start of about a minute is still possible.
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the test suite and builds this image on every push. It then drives the real flow through the running container: both sources ONLINE → inject → CRITICAL → Contain halts AttackSim → Inject restarts it.
 
@@ -544,8 +548,7 @@ frankenstein-threat-command-center/
 ├── data/                    # runtime: live_stream.log, .attack_stop (git-ignored)
 ├── docs/screenshots/
 ├── docker-compose.yml
-├── .env.example
-└── LICENSE (MIT)
+└── .env.example
 ```
 
 ---
