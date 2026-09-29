@@ -20,6 +20,8 @@ ATTACK_WEIGHTS: dict[str, float] = {
     "CONTAINMENT": 0.1,
 }
 
+LANDSCAPE_PRIOR_WEIGHT = 2.0  # pseudo-events at risk 0 in the landscape's weighted mean
+
 LEGACY_EVENT_WEIGHTS: dict[str, float] = {
     "Login Attempt": 0.5,
     "SSH Connection": 0.8,
@@ -103,7 +105,10 @@ class ThreatScorer:
         if weight_total == 0:
             return 0.0
 
-        base = weighted_sum / weight_total
+        # Shrink sparse evidence toward a quiet baseline: one stray legacy "Failed" login shouldn't
+        # read as a HIGH landscape. With a live stream (~20 recency-weighted events) this barely
+        # moves the score; a single genuinely critical hit still trips the peak floor below.
+        base = weighted_sum / (weight_total + LANDSCAPE_PRIOR_WEIGHT)
         diversity_bonus = min(12.0, len(recent_types) * 3.0)
         frequency_bonus = min(12.0, recent_count * 1.5)
         recent_risks = [r for ts, r, _ in self._landscape if now - ts <= 30 and ts > since]

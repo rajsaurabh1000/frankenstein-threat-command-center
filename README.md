@@ -315,7 +315,7 @@ One critical hit from ten minutes ago should **not** pin the gauge red forever. 
 
 | Component | Formula |
 |-----------|---------|
-| Recency-weighted mean | each event weighted by `exp(-age / 45s)` |
+| Recency-weighted mean | each event weighted by `exp(-age / 45s)`, plus 2 quiet pseudo-events at risk 0, so sparse evidence (one stray legacy `Failed` login) can't read as HIGH on its own |
 | Diversity bonus | `+3` per unique technique, max `+12` |
 | Frequency bonus | `+1.5` per event in the last 60 s, max `+12` |
 | Peak floor | if any event in the last 30 s has risk ≥ 85, score ≥ `0.85 × peak` |
@@ -546,11 +546,11 @@ frankenstein-threat-command-center/
 
 ## 16. Tests
 
-A focused `pytest` suite (28 tests, under a second) covers the parts that carry the architecture:
+A focused `pytest` suite (29 tests, under a second) covers the parts that carry the architecture:
 
 | File | What it proves |
 |------|----------------|
-| [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape and a contained attack can't rebound after the window |
+| [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape and a contained attack can't rebound after the window, a single noisy event stays LOW |
 | [`tests/test_brief.py`](tests/test_brief.py) | A posture change regenerates the brief even inside the throttle window, so brief and gauge never disagree; `updated_at` is the real generation time |
 | [`tests/test_dedup.py`](tests/test_dedup.py) | Deterministic, field-sensitive `event_id`s; a repeated observation is dropped; the cache is bounded |
 | [`tests/test_ingest.py`](tests/test_ingest.py) | JSON-lines, concatenated, and truncated log writes; PowerShell and ASP.NET payloads both map to `ThreatEvent` v1; severity clamping and defaults |

@@ -83,3 +83,9 @@ def test_contained_attack_does_not_rebound_after_window(monkeypatch):
 
     scorer.score_event(make_event("SQL Injection", 10))  # a fresh attack after containment still counts
     assert scorer.global_threat_level() is ThreatLevel.CRITICAL
+
+
+def test_single_noisy_event_does_not_read_as_high():
+    scorer = ThreatScorer()
+    scorer.score_event(make_event("SSH Connection", 6, status="Failed"))  # risk 60, e.g. legacy noise
+    assert scorer.global_threat_level() is ThreatLevel.LOW
