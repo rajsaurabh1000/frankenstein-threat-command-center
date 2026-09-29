@@ -184,8 +184,9 @@ createApp({
     const showCopilotIntro = ref(false);
     const copilotIntro = ref({
       id: "copilot-intro",
-      title: "The problem we solve",
-      text: "",
+      title: "Problem, architecture, and approach",
+      problem: "",
+      narration: "",
     });
     const introSpeaking = ref(false);
     const introLoading = ref(false);
@@ -1509,11 +1510,23 @@ createApp({
       } catch {
         /* noop */
       }
-      if (!copilotIntro.value.text) {
-        copilotIntro.value.text =
-          "Security teams split time between legacy APIs and live streams with no unified landscape. " +
-          "Threat Command Center normalizes ingest, scores risk deterministically, and delivers AI briefings on one console.";
+      if (!copilotIntro.value.problem && !copilotIntro.value.text) {
+        copilotIntro.value.problem =
+          "Legacy telemetry and live attack streams rarely share one contract — queues split, scores disagree, and executive reporting lags the SOC.";
+        copilotIntro.value.narration =
+          "Threat Command Center bridges both paths through one analytics layer and one console. Next, a full product walkthrough and inject-to-contain workflow.";
       }
+    }
+
+    function copilotIntroProblemText() {
+      const c = copilotIntro.value;
+      return c.problem || c.text || "";
+    }
+
+    function copilotIntroVoiceStep() {
+      const c = copilotIntro.value;
+      const text = c.narration || c.text || copilotIntroProblemText();
+      return { ...c, text };
     }
 
     function skipCopilotIntro() {
@@ -1530,7 +1543,7 @@ createApp({
     }
 
     async function speakCopilotIntro(afterIntro) {
-      if (!copilotIntro.value.text) return;
+      if (!copilotIntroVoiceStep().text) return;
       const done = afterIntro || onIntroVoiceComplete;
       introVoiceHint.value = "";
       introAutoplayBlocked.value = false;
@@ -1542,7 +1555,7 @@ createApp({
       introLoading.value = true;
       voiceError.value = "";
       await unlockNarrationAudio();
-      await playNarration(copilotIntro.value, {
+      await playNarration(copilotIntroVoiceStep(), {
         onStart: () => {
           introLoading.value = false;
           introSpeaking.value = true;
@@ -1572,8 +1585,8 @@ createApp({
 
     async function openCopilotIntroFlow() {
       introTourHandoff = false;
-      if (!copilotIntro.value.text) await loadCopilotIntro();
-      prefetchNarration(copilotIntro.value);
+      if (!copilotIntroProblemText()) await loadCopilotIntro();
+      prefetchNarration(copilotIntroVoiceStep());
       showCopilotIntro.value = true;
       await speakCopilotIntro();
     }
@@ -1897,6 +1910,7 @@ createApp({
       exportBoardSummary,
       showCopilotIntro,
       copilotIntro,
+      copilotIntroProblemText,
       introSpeaking,
       introLoading,
       introVoiceHint,
@@ -1958,7 +1972,7 @@ createApp({
         <div class="copilot-intro-grid">
           <div class="copilot-intro-copy">
             <h3 class="copilot-intro-h3">The problem</h3>
-            <p class="copilot-intro-lead">{{ copilotIntro.text }}</p>
+            <p class="copilot-intro-lead">{{ copilotIntroProblemText() }}</p>
             <h3 class="copilot-intro-h3">How we solve it</h3>
             <ul class="copilot-intro-list">
               <li>Legacy API and live stream adapters emit <strong>ThreatEvent v1</strong></li>

@@ -3,8 +3,8 @@
   "intro": "copilot-intro",
   "steps": {
     "copilot-intro": {
-      "file": "narr_22b694209ef22f83.mp3",
-      "digest": "22b694209ef22f83",
+      "file": "narr_b056a9f11ea20f31.mp3",
+      "digest": "b056a9f11ea20f31",
       "title": "Problem, architecture, and approach",
       "tab": null
     },
@@ -93,9 +93,9 @@
       "tab": "intelligence"
     },
     "lumi": {
-      "file": "narr_f42b0270ebb0fdc4.mp3",
-      "digest": "f42b0270ebb0fdc4",
-      "title": "Lumi assistant",
+      "file": "narr_af08f00b57a6839a.mp3",
+      "digest": "af08f00b57a6839a",
+      "title": "Lumi copilot panel",
       "tab": "intelligence"
     },
     "response": {
@@ -105,33 +105,39 @@
       "tab": "platform"
     },
     "action-dock": {
-      "file": "narr_174f77d7deee6b39.mp3",
-      "digest": "174f77d7deee6b39",
+      "file": "narr_914c723dfc7e3a6b.mp3",
+      "digest": "914c723dfc7e3a6b",
       "title": "Quick actions",
       "tab": "platform"
     },
     "ops-inject": {
-      "file": "narr_94b7bc21ee3e5d0e.mp3",
-      "digest": "94b7bc21ee3e5d0e",
-      "title": "Operational workflow \u2014 inject",
+      "file": "narr_26e6581e2b55abd7.mp3",
+      "digest": "26e6581e2b55abd7",
+      "title": "Demo \u2014 inject critical campaign",
       "tab": "platform"
     },
+    "ops-queue": {
+      "file": "narr_9d631014e9e853db.mp3",
+      "digest": "9d631014e9e853db",
+      "title": "Demo \u2014 normalized events in queue",
+      "tab": "operations"
+    },
     "ops-posture": {
-      "file": "narr_a4257e525576f25b.mp3",
-      "digest": "a4257e525576f25b",
-      "title": "Operational workflow \u2014 posture shift",
+      "file": "narr_9d9d95c8346126e2.mp3",
+      "digest": "9d9d95c8346126e2",
+      "title": "Demo \u2014 posture and landscape shift",
       "tab": "executive"
     },
     "ops-brief": {
-      "file": "narr_a6c74afff6a33dd0.mp3",
-      "digest": "a6c74afff6a33dd0",
-      "title": "Operational workflow \u2014 brief refresh",
+      "file": "narr_b0acc9521ca1e3bb.mp3",
+      "digest": "b0acc9521ca1e3bb",
+      "title": "Demo \u2014 refresh executive brief",
       "tab": "intelligence"
     },
     "ops-contain": {
-      "file": "narr_3266d39bb3bcc934.mp3",
-      "digest": "3266d39bb3bcc934",
-      "title": "Operational workflow \u2014 containment",
+      "file": "narr_1073e9fa5043ffea.mp3",
+      "digest": "1073e9fa5043ffea",
+      "title": "Demo \u2014 initiate containment",
       "tab": "executive"
     },
     "export": {

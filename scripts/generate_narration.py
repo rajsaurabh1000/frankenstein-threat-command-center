@@ -23,7 +23,10 @@ def main() -> None:
     index: dict = {}
 
     def write_step(step: dict) -> None:
-        text = normalize_text(step["text"])
+        raw = step.get("narration") or step.get("text") or ""
+        text = normalize_text(raw)
+        if not text:
+            return
         get_narration_mp3(data, text)
         mp3_src, _meta = cache_paths(data, text)
         digest = text_digest(text)

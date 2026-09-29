@@ -1,8 +1,33 @@
 # Threat Command Center
 
-**Unified Telemetry Platform** — a production-style SOC demonstration that normalizes **legacy API telemetry** and **live attack-stream telemetry** into one canonical threat model, scores risk deterministically, and delivers **executive-grade narratives** plus a **containment workflow** suitable for leadership briefings.
+**Project Frankenstein’s Dashboard** — bridge a legacy ASP.NET logger and PowerShell **AttackSim** stream through a Python analytics engine into one interactive **Threat Command Center** (dark-mode HTML5/JS + Vue).
 
-> Internal codename: *Project Frankenstein* · [Challenge spec](https://github.com/Joe-Juette/tc-Frankenstein)
+> [Application Engineer challenge spec](https://github.com/Joe-Juette/tc-Frankenstein)
+
+## Challenge deliverables (checklist for reviewers)
+
+| # | Requirement | Implementation |
+|---|-------------|----------------|
+| 1 | **Analytics Bridge (Python)** — tail `live_stream.log` + poll Legacy API, score events | `bridge/ingest.py`, `bridge/scorer.py`, `bridge/main.py` |
+| 2 | **Command Center (HTML5/JS)** — dark mode, **live feed**, **global gauge → red** on high severity | `dashboard/app.mjs`, WebSocket `/ws/threats` |
+| 3 | **Sales edge** (jaw-drop feature) | **AI Threat Brief** + playbook (`bridge/brief.py`), **Contain** stops AttackSim (`POST /api/contain` → `data/.attack_stop`), **Lumi** voice-guided copilot tour |
+| 4 | **Public GitHub repo** | Push this repository; reply to the challenge email with the clone URL |
+
+**Run locally:** `bash ./scripts/start-demo.sh` → http://127.0.0.1:8000
+
+| Component | Path |
+|-----------|------|
+| Legacy Core (ASP.NET) | `legacy/Program.cs` — `GET /api/raw-logs` on `:5080` |
+| Chaos Monkey (PowerShell) | `chaos/AttackSim.ps1` → `data/live_stream.log` |
+| Bridge + UI | `:8000` |
+
+## Demo Engineering Trifecta
+
+| Criterion | How this repo addresses it |
+|-----------|----------------------------|
+| **Aesthetic (40%)** | Dark executive SOC UI (PAN-aligned command center), live telemetry, CRITICAL gauge theatrics, analytics tiles — built for CISO demos, not a 2010 internal tool |
+| **Architecture (40%)** | C# → Python adapters → ThreatEvent v1 → WebSocket console; contain hook closes loop to PowerShell sim (see mermaid below) |
+| **The Vibe (20%)** | AI-assisted velocity: Cursor/LLM for scaffold, bridge API, Vue shell, copilot narration, and CSS; human-owned scoring contract, dedup, security boundaries, and demo flow |
 
 ## Executive summary
 
@@ -34,13 +59,13 @@ chmod +x scripts/start-demo.sh
 ./scripts/start-demo.sh
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000) — Vue 3 command center. **Lumi** (AI Copilot) opens on each refresh: problem + architecture, then a full product walkthrough and inject→contain workflow.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). **Lumi** intro: challenge problem + architecture → optional voice tour → inject→contain workflow.
 
-1. Confirm **System Status** shows Legacy API + Attack Stream online  
-2. Click **RUN SCENARIO → Critical Attack**  
-3. Watch gauge climb and feed populate  
-4. Read **AI Threat Brief**  
-5. Click **CONTAIN THREAT** → simulator stops, status becomes **CONTAINED**, gauge decays  
+1. Confirm telemetry health: **Legacy API** + **Attack Stream** online (under live queue)  
+2. **Response** → **Critical** → **Inject campaign** (or action dock **Inject**)  
+3. Watch **landscape gauge** hit **CRITICAL** and **live feed** update from AttackSim  
+4. **Intelligence** → **Executive brief** (AI summary; optional `OPENAI_API_KEY`)  
+5. **Initiate containment** → AttackSim stops, **CONTAINED**, gauge decays  
 
 ### Prerequisites
 
@@ -99,14 +124,16 @@ A **reference architecture diagram** ships with the UI (`dashboard/assets/archit
 
 ---
 
-## Problem statement
+## Problem statement (Bridge Builder mission)
+
+Legacy SaaS telemetry is **reliable but static** — buyers need to **see** real-time threat handling. Operating **ASP.NET raw logs** and a **PowerShell live stream** without one contract splits the queue, diverges scores, and leaves executive reporting behind the SOC.
 
 | Pain | Impact |
 |------|--------|
-| **Dual telemetry paths** | Legacy APIs and live streams are often monitored in separate tools |
-| **Inconsistent scoring** | Risk and “landscape” posture cannot be explained uniformly to auditors or executives |
-| **Fragmented queue** | Analysts context-switch instead of working one normalized ThreatEvent stream |
-| **Slow executive narrative** | Briefings lag the SOC because narrative is manual or tied to a single source |
+| **Static story** | CISO demos fail when the product does not move on the glass |
+| **Dual telemetry paths** | Legacy API vs live stream monitored in separate mental models |
+| **Inconsistent scoring** | Risk and landscape cannot be explained uniformly |
+| **Fragmented queue** | Analysts context-switch instead of one ThreatEvent stream |
 
 ## How Threat Command Center solves it
 
@@ -257,9 +284,9 @@ Legacy alias: `POST /api/mitigate` → same as contain.
 | 0:00 | “This is the Threat Command Center — two independent telemetry sources.” |
 | 0:10 | Point to **System Status**: Legacy API + Attack Stream online |
 | 0:15 | Show live normalized event arriving in feed |
-| 0:20 | Click **Critical Attack** scenario |
-| 0:30 | Gauge moves **ELEVATED → CRITICAL**, brief updates |
-| 0:40 | Click **CONTAIN THREAT** |
+| 0:20 | **Inject campaign** (Critical) |
+| 0:30 | Gauge **CRITICAL**, brief updates |
+| 0:40 | **Initiate containment** |
 | 0:50 | Attack simulator stops, status **CONTAINED**, gauge decays |
 | 1:00 | “The UI never cares where telemetry originated — adapters produce `ThreatEvent`, then scoring and presentation are shared.” |
 
@@ -278,6 +305,21 @@ data/       live_stream.log (runtime), .attack_stop (contain flag)
 
 UI loads from `dashboard/app.mjs`; Vue runtime is vendored on first `./scripts/start-demo.sh` run.
 
+Regenerate Lumi voice clips after editing `bridge/narration_scripts.py`:
+
+```bash
+./scripts/generate-narration.sh
+```
+
+## Publish (public GitHub — deliverable 4)
+
+```bash
+gh auth login
+gh repo create frankenstein-threat-command-center --public --source=. --remote=origin --push
+```
+
+Send the repository URL in your reply to the **Tech Challenge intro email**.
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).

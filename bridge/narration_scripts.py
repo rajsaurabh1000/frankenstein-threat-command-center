@@ -5,14 +5,18 @@ from __future__ import annotations
 COPILOT_INTRO = {
     "id": "copilot-intro",
     "title": "Problem, architecture, and approach",
-    "text": (
-        "Organizations often operate two parallel telemetry paths: a legacy enterprise API and a high-velocity live stream. "
-        "Without a shared contract, scoring diverges, queues fragment, and executive reporting lags the SOC. "
-        "Threat Command Center ingests both sources through the analytics bridge, normalizes to ThreatEvent version one, "
-        "deduplicates and scores deterministically, maintains a single landscape posture, enriches an executive brief, "
-        "and exposes containment hooks back to the simulator. "
-        "The diagram mirrors a Lucidchart or Excalidraw reference topology: sources, bridge, console, response loop. "
-        "Next I will cover each product surface, then run a standard critical-campaign workflow end to end."
+    "problem": (
+        "Our legacy SaaS telemetry is reliable but visually static — and in today's market, static does not sell. "
+        "CISO buyers need to see threats handled in real time, not only in slides. Yet most teams still operate two "
+        "paths in parallel: ASP.NET raw logs and a high-velocity AttackSim-style live stream. Without one shared contract, "
+        "scores diverge, queues fragment, and the story on the glass never matches what the SOC already knows."
+    ),
+    "narration": (
+        "That is the gap this demo closes. Threat Command Center bridges ASP.NET raw logs and the AttackSim stream through "
+        "a Python analytics layer, normalizes both to ThreatEvent version one, scores deterministically, and drives one "
+        "command center — posture, queue, brief, and containment back to the simulator. "
+        "The diagram shows sources, bridge, console, and the response loop. "
+        "Next I will cover each product surface, then run a critical campaign inject through contain end to end."
     ),
 }
 
