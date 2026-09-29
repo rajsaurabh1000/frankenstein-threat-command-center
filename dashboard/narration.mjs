@@ -60,8 +60,16 @@ function stopAudio() {
   if (!activeAudio) return;
   activeAudio.onended = null;
   activeAudio.onerror = null;
-  activeAudio.pause();
-  activeAudio.currentTime = 0;
+  activeAudio.onpause = null;
+  activeAudio.onplay = null;
+  try {
+    activeAudio.pause();
+    activeAudio.currentTime = 0;
+    activeAudio.removeAttribute("src");
+    activeAudio.load();
+  } catch {
+    /* ignore teardown errors */
+  }
   activeAudio = null;
 }
 
@@ -200,7 +208,8 @@ export function prefetchNarration(step) {
     .catch(() => false);
 }
 
-export async function playNarration(textOrStep, callbacks = {}) {
+export async function playNarration(textOrStep, callbacks = {}, options = {}) {
+  const { fromStart = false } = options;
   const step =
     typeof textOrStep === "object" && textOrStep !== null ? textOrStep : { text: textOrStep };
   const key = normalizeText(step.text);
@@ -209,18 +218,26 @@ export async function playNarration(textOrStep, callbacks = {}) {
     return false;
   }
 
+  if (fromStart) {
+    stopNarration();
+  }
+
   await unlockNarrationAudio();
 
   const requestId = activeRequest + 1;
   activeRequest = requestId;
 
   try {
-    const staticUrl = await resolveStaticUrl({
+    let staticUrl = await resolveStaticUrl({
       text: key,
       stepId: step.id,
       audioFile: step.audioFile,
     });
     if (requestId !== activeRequest) return false;
+    if (fromStart && staticUrl) {
+      const sep = staticUrl.includes("?") ? "&" : "?";
+      staticUrl = `${staticUrl}${sep}t=${Date.now()}`;
+    }
 
     let staticPlayError = null;
     const staticOk = await tryPlayStaticUrl(staticUrl, {
@@ -270,6 +287,7 @@ function tryPlayStaticUrl(url, callbacks, requestId) {
     stopAudio();
     const audio = new Audio(url);
     audio.preload = "auto";
+    audio.currentTime = 0;
     let settled = false;
     const finish = (ok) => {
       if (settled) return;
@@ -293,7 +311,12 @@ function tryPlayStaticUrl(url, callbacks, requestId) {
     const attempt = audio.play();
     if (attempt && typeof attempt.then === "function") {
       attempt
-        .then(() => finish(true))
+        .then(() => {
+          if (requestId === activeRequest && callbacks.onStart) {
+            callbacks.onStart();
+          }
+          finish(true);
+        })
         .catch((err) => {
           if (requestId !== activeRequest) return;
           activeAudio = null;

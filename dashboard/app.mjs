@@ -1542,11 +1542,16 @@ createApp({
       }
     }
 
-    async function speakCopilotIntro(afterIntro) {
+    async function speakCopilotIntro(afterIntro, options = {}) {
+      const chainTourOnEnd = options.chainTourOnEnd === true;
+      const fromStart = options.fromStart === true;
       if (!copilotIntroVoiceStep().text) return;
-      const done = afterIntro || onIntroVoiceComplete;
-      introVoiceHint.value = "";
-      introAutoplayBlocked.value = false;
+      const done =
+        afterIntro ??
+        (chainTourOnEnd ? onIntroVoiceComplete : () => {});
+      if (!fromStart) {
+        stopNarration();
+      }
       if (!voiceEnabled.value) {
         introVoiceHint.value =
           "Voice is off — enable narration below, then use Replay overview or Start feature walkthrough.";
@@ -1555,40 +1560,64 @@ createApp({
       introLoading.value = true;
       voiceError.value = "";
       await unlockNarrationAudio();
-      await playNarration(copilotIntroVoiceStep(), {
-        onStart: () => {
-          introLoading.value = false;
-          introSpeaking.value = true;
-          introAutoplayBlocked.value = false;
-        },
-        onEnd: () => {
-          introSpeaking.value = false;
-          introLoading.value = false;
-          done();
-        },
-        onError: (err) => {
-          introLoading.value = false;
-          introSpeaking.value = false;
-          const msg = err?.message || "";
-          const blocked = /NotAllowed|autoplay|gesture/i.test(msg) || err?.name === "NotAllowedError";
-          if (blocked) {
+      const played = await playNarration(
+        copilotIntroVoiceStep(),
+        {
+          onStart: () => {
+            introLoading.value = false;
+            introSpeaking.value = true;
+            introAutoplayBlocked.value = false;
+            introVoiceHint.value = "";
+          },
+          onEnd: () => {
+            introSpeaking.value = false;
+            introLoading.value = false;
+            done();
+          },
+          onError: (err) => {
+            introLoading.value = false;
+            introSpeaking.value = false;
             introAutoplayBlocked.value = true;
-            introVoiceHint.value =
-              "Browsers block audio until you interact with the page. Click Replay overview or Start feature walkthrough — voice and the tour will run from that tap.";
-          } else {
-            introVoiceHint.value =
-              "Voice clip did not play — hard refresh, or run ./scripts/generate-narration.sh and restart the demo. You can still start the walkthrough.";
-          }
+            const msg = err?.message || "";
+            const blocked = /NotAllowed|autoplay|gesture/i.test(msg) || err?.name === "NotAllowedError";
+            if (blocked) {
+              introVoiceHint.value =
+                "Click Play overview again — your browser needs a direct tap on that button for audio.";
+            } else {
+              introVoiceHint.value =
+                "Voice clip did not play — hard refresh, or run ./scripts/generate-narration.sh and restart the demo.";
+            }
+          },
         },
-      });
+        { fromStart }
+      );
+      if (!played && !introSpeaking.value) {
+        introLoading.value = false;
+      }
+    }
+
+    async function replayCopilotIntro() {
+      if (lumiGuideActive.value) {
+        endLumiTour();
+      }
+      introTourHandoff = false;
+      tourAutoPlay.value = false;
+      const chainAfter =
+        voiceEnabled.value && tourSteps.value.length && introAutoplayBlocked.value;
+      await speakCopilotIntro(undefined, { chainTourOnEnd: chainAfter, fromStart: true });
     }
 
     async function openCopilotIntroFlow() {
       introTourHandoff = false;
+      tourAutoPlay.value = false;
       if (!copilotIntroProblemText()) await loadCopilotIntro();
       prefetchNarration(copilotIntroVoiceStep());
       showCopilotIntro.value = true;
-      await speakCopilotIntro();
+      if (voiceEnabled.value) {
+        introAutoplayBlocked.value = true;
+        introVoiceHint.value =
+          "Overview audio does not auto-start on refresh — click Play overview (highlighted) to hear the problem and architecture from the beginning.";
+      }
     }
 
     async function startDashboardTourFromIntro() {
@@ -1919,6 +1948,7 @@ createApp({
       skipCopilotIntro,
       startDashboardTourFromIntro,
       speakCopilotIntro,
+      replayCopilotIntro,
       tourSteps,
       tourIndex,
       currentTourStep,
@@ -1981,9 +2011,6 @@ createApp({
               <li>Executive brief and playbook use minimized telemetry context</li>
               <li>Containment and campaign inject close the operational loop</li>
             </ul>
-            <p class="copilot-intro-note">
-              Reference topology — export the diagram to Lucidchart or Excalidraw for architecture reviews.
-            </p>
             <div
               class="copilot-intro-narration"
               :class="{
@@ -1999,7 +2026,7 @@ createApp({
                     : introLoading
                       ? 'Loading voice…'
                       : introAutoplayBlocked
-                        ? 'Tap a button below to start voice'
+                        ? 'Click Play overview to start voice'
                         : 'Voice overview (auto-starts when the browser allows)'
                 }}
               </span>
@@ -2016,11 +2043,25 @@ createApp({
           </figure>
         </div>
         <div class="copilot-intro-actions">
-          <button type="button" class="copilot-intro-btn copilot-intro-btn--primary" @click="startDashboardTourFromIntro">
-            {{ introAutoplayBlocked ? 'Start voice and walkthrough' : 'Start feature walkthrough' }}
+          <button
+            id="copilot-intro-play-overview"
+            type="button"
+            class="copilot-intro-btn"
+            :class="{
+              'copilot-intro-btn--primary': introAutoplayBlocked,
+              'copilot-intro-btn--voice-spotlight': introAutoplayBlocked && !introSpeaking && !introLoading,
+            }"
+            @click="replayCopilotIntro()"
+          >
+            {{ introAutoplayBlocked ? 'Play overview' : 'Replay overview' }}
           </button>
-          <button type="button" class="copilot-intro-btn" @click="speakCopilotIntro()">
-            {{ introAutoplayBlocked ? 'Play overview only' : 'Replay overview' }}
+          <button
+            type="button"
+            class="copilot-intro-btn"
+            :class="{ 'copilot-intro-btn--primary': !introAutoplayBlocked }"
+            @click="startDashboardTourFromIntro"
+          >
+            {{ introAutoplayBlocked ? 'Start walkthrough' : 'Start feature walkthrough' }}
           </button>
           <button type="button" class="copilot-intro-btn ghost" @click="skipCopilotIntro">Skip to dashboard</button>
         </div>
