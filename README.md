@@ -4,10 +4,6 @@
 
 > Internal codename: *Project Frankenstein* · [Challenge spec](https://github.com/Joe-Juette/tc-Frankenstein)
 
-**Submitting the Application Engineer challenge?** See **[CHALLENGE-SUBMISSION.md](CHALLENGE-SUBMISSION.md)** (rubric map + email template) and **[VIBE.md](VIBE.md)** (AI orchestration write-up).
-
-**Presenting to leadership?** Use [LEADERSHIP-DEMO.md](LEADERSHIP-DEMO.md) (5-minute script).
-
 ## Executive summary
 
 | Capability | Outcome for the business |
@@ -51,8 +47,6 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000) — Vue 3 command center. **
 - .NET 8 SDK  
 - Python 3.11+  
 - PowerShell `pwsh` (attack simulator)  
-- **Optional:** Node.js 20+ only if you use `./scripts/build-ui.sh` (default UI needs no npm — Vue is vendored on first run)  
-
 Optional: `.env` with `OPENAI_API_KEY` for LLM briefs (template brief works without a key).
 
 ### Troubleshooting (Apple Silicon)
@@ -274,42 +268,15 @@ Legacy alias: `POST /api/mitigate` → same as contain.
 ## Development layout
 
 ```
-legacy/          ASP.NET raw logs API
-chaos/           AttackSim.ps1
-bridge/          FastAPI analytics bridge
-dashboard/       Vue 3 ESM console — Lumi copilot, voice tour (no build required)
-frontend/        Optional Vite source tree (same UX, componentized)
-dashboard/dist/  Output of ./scripts/build-ui.sh
-scripts/         start-demo.sh, build-ui.sh
+legacy/     ASP.NET raw logs API
+chaos/      AttackSim.ps1
+bridge/     FastAPI analytics bridge
+dashboard/  Vue 3 ESM command center (Lumi copilot, voice tour — no npm build)
+scripts/    start-demo.sh, generate-narration.sh
+data/       live_stream.log (runtime), .attack_stop (contain flag)
 ```
 
-Default demo UI: **Vue 3** loaded from `dashboard/app.mjs` (works offline after first CDN cache).
-
-Optional Vite pipeline:
-
-```bash
-./scripts/build-ui.sh
-BUILD_VITE_UI=1 ./scripts/start-demo.sh
-```
-
----
-
-## Deploy a public demo URL
-
-See [DEPLOY.md](DEPLOY.md) for Render, Docker, or ngrok options.
-
-## Publish (submission)
-
-Full checklist, rubric mapping, and **email template**: [CHALLENGE-SUBMISSION.md](CHALLENGE-SUBMISSION.md).
-
-```bash
-# Install GitHub CLI once: https://cli.github.com/
-gh auth login
-git add -A && git commit -m "Threat Command Center — Frankenstein challenge submission"
-gh repo create frankenstein-threat-command-center --public --source=. --remote=origin --push
-```
-
-Email the public repo URL to the challenge contact (template in CHALLENGE-SUBMISSION.md).
+UI loads from `dashboard/app.mjs`; Vue runtime is vendored on first `./scripts/start-demo.sh` run.
 
 ## License
 

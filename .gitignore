@@ -10,5 +10,5 @@ legacy/bin/
 legacy/obj/
 *.user
 .DS_Store
-frontend/node_modules/
 dashboard/dist/
+local-docs/

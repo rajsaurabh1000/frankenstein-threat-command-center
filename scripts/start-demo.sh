@@ -62,13 +62,6 @@ if ! venv_healthy; then
   exit 1
 fi
 
-# Optional Vite build (frontend/). Default dashboard uses Vue 3 ESM in dashboard/.
-if command -v npm >/dev/null 2>&1 && [[ "${BUILD_VITE_UI:-0}" == "1" ]]; then
-  echo "Building Vite command center..."
-  (cd frontend && npm ci && npm run build)
-  export DASHBOARD_DIR="$ROOT/dashboard/dist"
-fi
-
 cleanup() {
   [[ -n "${LEGACY_PID:-}" ]] && kill "$LEGACY_PID" 2>/dev/null || true
   [[ -n "${BRIDGE_PID:-}" ]] && kill "$BRIDGE_PID" 2>/dev/null || true
