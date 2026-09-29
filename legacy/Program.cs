@@ -16,17 +16,19 @@ var extraSources = new[] { "10.0.0.12", "172.16.4.88", "45.33.22.11", "192.168.1
 var extraEvents = new[] { "Login Attempt", "SSH Connection", "File Access", "DNS Query", "Admin Escalation" };
 var statuses = new[] { "Success", "Failed", "Denied", "Blocked" };
 
-app.MapGet("/api/raw-logs", (bool? jitter) =>
+app.MapGet("/api/raw-logs", (string? jitter) =>
 {
+    var useJitter = string.Equals(jitter, "1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(jitter, "true", StringComparison.OrdinalIgnoreCase);
     var now = DateTime.Now;
     var logs = new[]
     {
         new
         {
             Timestamp = now,
-            Source = jitter == true ? extraSources[rng.Next(extraSources.Length)] : "192.168.1.1",
-            Event = jitter == true ? extraEvents[rng.Next(extraEvents.Length)] : "Login Attempt",
-            Status = jitter == true ? statuses[rng.Next(statuses.Length)] : "Success"
+            Source = useJitter ? extraSources[rng.Next(extraSources.Length)] : "192.168.1.1",
+            Event = useJitter ? extraEvents[rng.Next(extraEvents.Length)] : "Login Attempt",
+            Status = useJitter ? statuses[rng.Next(statuses.Length)] : "Success"
         },
         new
         {

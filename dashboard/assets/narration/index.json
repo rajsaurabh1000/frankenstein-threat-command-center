@@ -1,0 +1,150 @@
+{
+  "voice": "en-US-JennyNeural",
+  "intro": "copilot-intro",
+  "steps": {
+    "copilot-intro": {
+      "file": "narr_22b694209ef22f83.mp3",
+      "digest": "22b694209ef22f83",
+      "title": "Problem, architecture, and approach",
+      "tab": null
+    },
+    "welcome": {
+      "file": "narr_1dc21cc0ae947b2a.mp3",
+      "digest": "1dc21cc0ae947b2a",
+      "title": "Threat Command Center",
+      "tab": "executive"
+    },
+    "header": {
+      "file": "narr_18457fb1ccfb7a83.mp3",
+      "digest": "18457fb1ccfb7a83",
+      "title": "Tenant and environment context",
+      "tab": "executive"
+    },
+    "capabilities": {
+      "file": "narr_5e22b4c0c107afbd.mp3",
+      "digest": "5e22b4c0c107afbd",
+      "title": "Platform capabilities",
+      "tab": "executive"
+    },
+    "toolbar": {
+      "file": "narr_b4cbc6f45870c01d.mp3",
+      "digest": "b4cbc6f45870c01d",
+      "title": "Operator toolbar",
+      "tab": "executive"
+    },
+    "status-pills": {
+      "file": "narr_a4456cb6bf4ea6ef.mp3",
+      "digest": "a4456cb6bf4ea6ef",
+      "title": "Connection and posture status",
+      "tab": "executive"
+    },
+    "section-nav": {
+      "file": "narr_b8bf2464e075b82f.mp3",
+      "digest": "b8bf2464e075b82f",
+      "title": "Primary navigation",
+      "tab": "executive"
+    },
+    "posture": {
+      "file": "narr_203598534408bd88.mp3",
+      "digest": "203598534408bd88",
+      "title": "Global posture deck",
+      "tab": "executive"
+    },
+    "contain": {
+      "file": "narr_fd2c4c091d4a7ee9.mp3",
+      "digest": "fd2c4c091d4a7ee9",
+      "title": "Response controls",
+      "tab": "executive"
+    },
+    "alerts": {
+      "file": "narr_a20a4dce70b7feca.mp3",
+      "digest": "a20a4dce70b7feca",
+      "title": "Posture alerts",
+      "tab": "executive"
+    },
+    "analytics": {
+      "file": "narr_8f791113c23a5a4a.mp3",
+      "digest": "8f791113c23a5a4a",
+      "title": "Exposure analytics",
+      "tab": "executive"
+    },
+    "telemetry": {
+      "file": "narr_e450eed786835b78.mp3",
+      "digest": "e450eed786835b78",
+      "title": "Live threat queue",
+      "tab": "operations"
+    },
+    "health": {
+      "file": "narr_55b26a5cf2ec7367.mp3",
+      "digest": "55b26a5cf2ec7367",
+      "title": "Posture snapshot and integration health",
+      "tab": "operations"
+    },
+    "intelligence": {
+      "file": "narr_c4e57499709ff2aa.mp3",
+      "digest": "c4e57499709ff2aa",
+      "title": "Executive brief",
+      "tab": "intelligence"
+    },
+    "playbook": {
+      "file": "narr_9c208206158621b4.mp3",
+      "digest": "9c208206158621b4",
+      "title": "Playbook and recommendations",
+      "tab": "intelligence"
+    },
+    "lumi": {
+      "file": "narr_f42b0270ebb0fdc4.mp3",
+      "digest": "f42b0270ebb0fdc4",
+      "title": "Lumi assistant",
+      "tab": "intelligence"
+    },
+    "response": {
+      "file": "narr_4ac0ed9a567be8b8.mp3",
+      "digest": "4ac0ed9a567be8b8",
+      "title": "Campaign injection workspace",
+      "tab": "platform"
+    },
+    "action-dock": {
+      "file": "narr_174f77d7deee6b39.mp3",
+      "digest": "174f77d7deee6b39",
+      "title": "Quick actions",
+      "tab": "platform"
+    },
+    "ops-inject": {
+      "file": "narr_94b7bc21ee3e5d0e.mp3",
+      "digest": "94b7bc21ee3e5d0e",
+      "title": "Operational workflow \u2014 inject",
+      "tab": "platform"
+    },
+    "ops-posture": {
+      "file": "narr_a4257e525576f25b.mp3",
+      "digest": "a4257e525576f25b",
+      "title": "Operational workflow \u2014 posture shift",
+      "tab": "executive"
+    },
+    "ops-brief": {
+      "file": "narr_a6c74afff6a33dd0.mp3",
+      "digest": "a6c74afff6a33dd0",
+      "title": "Operational workflow \u2014 brief refresh",
+      "tab": "intelligence"
+    },
+    "ops-contain": {
+      "file": "narr_3266d39bb3bcc934.mp3",
+      "digest": "3266d39bb3bcc934",
+      "title": "Operational workflow \u2014 containment",
+      "tab": "executive"
+    },
+    "export": {
+      "file": "narr_2083e79404464bfa.mp3",
+      "digest": "2083e79404464bfa",
+      "title": "Executive export",
+      "tab": "executive"
+    },
+    "complete": {
+      "file": "narr_55901a00c2872799.mp3",
+      "digest": "55901a00c2872799",
+      "title": "Orientation complete",
+      "tab": "executive"
+    }
+  }
+}

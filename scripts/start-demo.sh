@@ -6,6 +6,27 @@ cd "$ROOT"
 
 export PATH="$HOME/.dotnet:$PATH"
 
+free_port() {
+  local port="$1"
+  local pids
+  pids="$(lsof -ti "tcp:${port}" 2>/dev/null || true)"
+  if [[ -n "${pids}" ]]; then
+    echo "Freeing port ${port} (previous demo still running)..."
+    kill -9 ${pids} 2>/dev/null || true
+    sleep 1
+  fi
+}
+
+free_port 5080
+free_port 8000
+
+mkdir -p dashboard/vendor
+if [[ ! -f dashboard/vendor/vue.esm-browser.js ]]; then
+  echo "Downloading local Vue runtime (avoids CDN blocked environments)..."
+  curl -fsSL "https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.esm-browser.js" \
+    -o dashboard/vendor/vue.esm-browser.js
+fi
+
 mkdir -p data
 : > data/live_stream.log
 rm -f data/.attack_stop
@@ -18,8 +39,12 @@ else
 fi
 
 venv_healthy() {
-  [[ -x bridge/.venv/bin/python ]] &&
+  [[ -x bridge/.venv/bin/python ]] || return 1
+  if [[ "$(uname -m)" == "arm64" ]] && command -v /usr/bin/arch >/dev/null 2>&1; then
+    arch -arm64 bridge/.venv/bin/python -c "import pydantic_core" >/dev/null 2>&1
+  else
     bridge/.venv/bin/python -c "import pydantic_core" >/dev/null 2>&1
+  fi
 }
 
 if ! venv_healthy; then
@@ -35,6 +60,13 @@ bridge/.venv/bin/python -m pip install -q -r bridge/requirements.txt
 if ! venv_healthy; then
   echo "ERROR: bridge virtualenv failed pydantic import. Try: rm -rf bridge/.venv && ./scripts/start-demo.sh"
   exit 1
+fi
+
+# Optional Vite build (frontend/). Default dashboard uses Vue 3 ESM in dashboard/.
+if command -v npm >/dev/null 2>&1 && [[ "${BUILD_VITE_UI:-0}" == "1" ]]; then
+  echo "Building Vite command center..."
+  (cd frontend && npm ci && npm run build)
+  export DASHBOARD_DIR="$ROOT/dashboard/dist"
 fi
 
 cleanup() {
@@ -53,8 +85,13 @@ echo "Starting Analytics Bridge (Python) on :8000..."
   cd bridge
   export DATA_DIR="$ROOT/data"
   export LEGACY_API_URL="http://127.0.0.1:5080"
+  export DASHBOARD_DIR="${DASHBOARD_DIR:-$ROOT/dashboard}"
   if [[ -f "$ROOT/.env" ]]; then set -a; source "$ROOT/.env"; set +a; fi
-  .venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
+  if [[ "$(uname -m)" == "arm64" ]] && command -v /usr/bin/arch >/dev/null 2>&1; then
+    arch -arm64 .venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
+  else
+    .venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
+  fi
 ) &
 BRIDGE_PID=$!
 

@@ -1,8 +1,35 @@
-# Frankenstein Threat Command Center
+# Threat Command Center
 
-**Project Frankenstein 2.0** — a demo that bridges legacy ASP.NET telemetry, a PowerShell attack simulator, and a Python analytics engine into a real-time **Threat Command Center** dashboard.
+**Unified Telemetry Platform** — a production-style SOC demonstration that normalizes **legacy API telemetry** and **live attack-stream telemetry** into one canonical threat model, scores risk deterministically, and delivers **executive-grade narratives** plus a **containment workflow** suitable for leadership briefings.
 
-Challenge reference: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Frankenstein)
+> Internal codename: *Project Frankenstein* · [Challenge spec](https://github.com/Joe-Juette/tc-Frankenstein)
+
+**Submitting the Application Engineer challenge?** See **[CHALLENGE-SUBMISSION.md](CHALLENGE-SUBMISSION.md)** (rubric map + email template) and **[VIBE.md](VIBE.md)** (AI orchestration write-up).
+
+**Presenting to leadership?** Use [LEADERSHIP-DEMO.md](LEADERSHIP-DEMO.md) (5-minute script).
+
+## Executive summary
+
+| Capability | Outcome for the business |
+|------------|-------------------------|
+| **Unified ingest** | Legacy and modern sources appear as one event stream in the SOC |
+| **ThreatEvent v1 contract** | New integrations plug in without redesigning the console |
+| **Deterministic scoring** | Explainable risk and landscape posture — no black-box dependency |
+| **AI Threat Summary** | CISO-ready language (optional LLM; template always works) |
+| **Containment workflow** | Demonstrates response orchestration end-to-end in the demo sandbox |
+| **Observable platform** | Per-source health — integration failures are visible immediately |
+
+## What this demonstrates
+
+- Legacy system integration (ASP.NET minimal API)
+- Real-time event processing (PowerShell tail + WebSocket)
+- **Canonical event contract** with schema versioning
+- **At-least-once ingestion** with deduplication
+- Deterministic risk scoring + separate global landscape score
+- Security-aware engineering (validation, fixed paths, data minimization for LLM)
+- AI-assisted analysis (optional, non-blocking)
+- Customer-facing UX (Vue 3 command center)
+- Observable integration health + graceful degradation
 
 ## 30-second demo
 
@@ -11,111 +38,278 @@ chmod +x scripts/start-demo.sh
 ./scripts/start-demo.sh
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Watch the live feed and gauge climb as `AttackSim.ps1` runs. Click **MITIGATE ATTACK** to write a stop flag, halt the simulator, and decay the global threat score.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) — Vue 3 command center. **Lumi** (AI Copilot) opens on each refresh: problem + architecture, then a full product walkthrough and inject→contain workflow.
+
+1. Confirm **System Status** shows Legacy API + Attack Stream online  
+2. Click **RUN SCENARIO → Critical Attack**  
+3. Watch gauge climb and feed populate  
+4. Read **AI Threat Brief**  
+5. Click **CONTAIN THREAT** → simulator stops, status becomes **CONTAINED**, gauge decays  
 
 ### Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download)
-- Python 3.11+
-- [PowerShell (`pwsh`)](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-macos) for the attack simulator
+- .NET 8 SDK  
+- Python 3.11+  
+- PowerShell `pwsh` (attack simulator)  
+- **Optional:** Node.js 20+ only if you use `./scripts/build-ui.sh` (default UI needs no npm — Vue is vendored on first run)  
 
-**Troubleshooting:** If you see `pydantic_core ... incompatible architecture (have 'arm64', need 'x86_64')`, your venv was built with a different CPU arch than the shell running the demo (often x86_64 PowerShell on Apple Silicon). Run `rm -rf bridge/.venv` and start again with `./scripts/start-demo.sh` (the script auto-recreates the venv). On Apple Silicon, running the demo from **Terminal.app** or **zsh** is the most reliable option.
+Optional: `.env` with `OPENAI_API_KEY` for LLM briefs (template brief works without a key).
 
-Optional: copy `.env.example` to `.env` and set `OPENAI_API_KEY` for LLM-generated CISO briefs (template brief works without a key).
+### Troubleshooting (Apple Silicon)
+
+If you see `pydantic_core ... incompatible architecture`, run:
+
+```bash
+rm -rf bridge/.venv
+./scripts/start-demo.sh
+```
+
+Prefer **Terminal/zsh** over x86_64 PowerShell when possible.
+
+---
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-  subgraph legacy [Legacy_ASP_NET]
-    LegacyAPI["GET /api/raw-logs"]
+flowchart TB
+  legacy[Legacy ASP.NET /api/raw-logs]
+  chaos[PowerShell AttackSim.ps1]
+  log[(data/live_stream.log)]
+  stop[(data/.attack_stop)]
+
+  subgraph bridge [Python Analytics Bridge]
+    norm[Normalizer Adapters]
+    dedup[Deduplicator]
+    score[Risk Scorer]
+    state[Threat State + Health]
+    brief[AI Brief Cache]
   end
-  subgraph chaos [PowerShell]
-    AttackSim["AttackSim.ps1"]
-    LogFile["live_stream.log"]
-    StopFlag[".attack_stop"]
-  end
-  subgraph bridge [Python_FastAPI]
-    Ingest["Poll + tail ingest"]
-    Score["Hybrid scorer"]
-    WS["WebSocket hub"]
-    Brief["AI brief cache"]
-    Mitigate["POST /api/mitigate"]
-  end
-  subgraph ui [Command_Center]
-    Dash["HTML5 dashboard"]
-  end
-  AttackSim --> LogFile
-  AttackSim --> StopFlag
-  LegacyAPI --> Ingest
-  LogFile --> Ingest
-  Ingest --> Score
-  Score --> WS
-  Score --> Brief
-  Mitigate --> StopFlag
-  WS --> Dash
-  Brief --> Dash
-  Mitigate --> Dash
+
+  ui[Vue Threat Command Center]
+
+  legacy --> norm
+  chaos --> log --> norm
+  norm --> dedup --> score --> state
+  score --> brief
+  state --> ui
+  brief --> ui
+  ui -->|POST /api/contain| stop
+  ui -->|POST /api/demo/scenario| log
 ```
 
-| Component | Stack | Port |
-|-----------|-------|------|
-| Legacy Logger | ASP.NET Minimal API | 5080 |
-| Analytics Bridge | FastAPI + WebSocket | 8000 |
-| Attack Simulator | PowerShell | writes `data/live_stream.log` |
-| Command Center | HTML5 / CSS / JS | served by bridge at `/` |
+**Ports:** Legacy `5080` · Bridge + UI `8000`
 
-## Unified event schema
+New telemetry sources only need an **adapter** that emits `ThreatEvent` v1 — scoring, brief, and UI stay unchanged.
+
+A **reference architecture diagram** ships with the UI (`dashboard/assets/architecture-tcc.svg`) — suitable for Lucidchart / Excalidraw parity in reviews.
+
+---
+
+## Problem statement
+
+| Pain | Impact |
+|------|--------|
+| **Dual telemetry paths** | Legacy APIs and live streams are often monitored in separate tools |
+| **Inconsistent scoring** | Risk and “landscape” posture cannot be explained uniformly to auditors or executives |
+| **Fragmented queue** | Analysts context-switch instead of working one normalized ThreatEvent stream |
+| **Slow executive narrative** | Briefings lag the SOC because narrative is manual or tied to a single source |
+
+## How Threat Command Center solves it
+
+1. **Ingest** — Legacy ASP.NET (`:5080`) and PowerShell live stream append to one pipeline.  
+2. **Normalize** — Bridge adapters map both paths to **ThreatEvent v1**.  
+3. **Dedupe & score** — Deterministic rules produce per-event risk and a decayed **global landscape** score.  
+4. **Publish** — WebSocket pushes unified state to the Vue console (posture, analytics, SOC queue).  
+5. **Intelligence** — Executive brief + playbook from a minimized telemetry window (LLM optional).  
+6. **Respond** — Containment and campaign inject hooks close the loop (simulator stop-flag in this repo).
+
+Implementation detail lives in `bridge/` (scoring, brief, WebSocket), `legacy/`, `chaos/AttackSim.ps1`, and `dashboard/app.mjs`.
+
+---
+
+## AI Copilot (Lumi)
+
+Lumi is the embedded **AI Copilot guide** — production-oriented copy (not a “demo script”). On **every page refresh**:
+
+| Phase | What happens |
+|-------|----------------|
+| **1. Intro modal** | Problem statement, implementation bullets, architecture diagram, voice overview |
+| **2. Product tour** | ~20 steps: header, navigation, posture, analytics, telemetry, health, brief, playbook, Lumi assistant |
+| **3. Operational workflow** | Copilot **injects** a critical campaign, refreshes the brief, **initiates containment**, highlights export |
+| **4. Replay** | Toolbar **AI Copilot guide** restarts the full flow |
+
+Narration scripts: `bridge/narration_scripts.py` · Voice assets: `./scripts/generate-narration.sh` → `dashboard/assets/narration/` · API: `GET /api/narration/intro`, `GET /api/narration/tour`
+
+---
+
+## Canonical ThreatEvent contract (v1)
 
 | Field | Description |
 |-------|-------------|
-| `source` | `legacy` (C# API) or `live` (PowerShell log) |
-| `event_type` | Attack or log event name |
-| `origin` | IP or host identifier |
-| `severity` | 1–10 |
-| `status` | Legacy status when applicable (Failed/Denied boosts score) |
+| `schema_version` | Contract version (`1.0`) |
+| `event_id` | Deterministic ID (hash of source + time + attack + IPs + destination) |
+| `timestamp` | Event time (UTC) |
+| `source` | `legacy_api` \| `live_stream` \| `soc_console` |
+| `attack_type` | Technique / log event name |
+| `source_ip` | Origin identifier |
+| `destination` | Target asset (e.g. `web-app-01`) |
+| `status` | `Detected`, `Failed`, `Contained`, … |
+| `raw_severity` | 1–10 |
+| `metadata` | Upstream context (validated, non-authoritative) |
 
-## Scoring rubric (deterministic)
+After scoring, clients also receive:
 
-- **Base:** attack-type weight × `(severity / 10)` × 100  
-- **Legacy boost:** +15 when status is Failed, Denied, or Blocked  
-- **Velocity:** up to +20 from events in the last 60 seconds  
-- **Global score:** exponential moving average of per-event scores  
-- **Levels:** `CRITICAL` if severity ≥ 8 or score ≥ 85; `HIGH` ≥ 65; `ELEVATED` ≥ 40  
+- `risk_score` (0–100, **per event**)
+- `threat_level` (event classification)
+- `global_score` (**landscape**, time-decayed)
 
-Optional **LLM brief:** when `OPENAI_API_KEY` is set, the bridge generates a CISO-style narrative every ~25s during elevated activity. The gauge never depends on the LLM.
+Example:
 
-## Sales edge features
+```json
+{
+  "schema_version": "1.0",
+  "event_id": "evt-8f21a2c91b4d",
+  "timestamp": "2026-09-29T16:44:32Z",
+  "source": "live_stream",
+  "attack_type": "SQL Injection",
+  "source_ip": "103.25.12.200",
+  "destination": "web-app-01",
+  "status": "Detected",
+  "raw_severity": 9,
+  "risk_score": 92,
+  "threat_level": "CRITICAL"
+}
+```
 
-1. **AI Attack Brief** — executive narrative in the right panel (LLM or template).  
-2. **Mitigate** — one-click stop via `data/.attack_stop` + visual neutralization and score decay.
+---
+
+## Scoring model
+
+### Event `risk_score` (deterministic)
+
+- Attack-type weight × `(raw_severity / 10)` × 100  
+- +15 when legacy status is Failed / Denied / Blocked  
+
+### Global landscape score (separate)
+
+Computed from recent events with:
+
+- **Time decay** (exponential, ~45s half-life)  
+- **Frequency** (events in last 60s)  
+- **Attack diversity** (unique techniques)  
+- **Containment decay** after demo CONTAIN THREAT  
+
+One historical critical event does **not** permanently lock the gauge critical.
+
+---
 
 ## API
 
-- `GET /api/state` — gauge and recent scored events  
-- `GET /api/brief` — latest attack brief  
-- `POST /api/mitigate` — halt attack sim and decay threat  
-- `WS /ws/threats` — live event and state stream  
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/state` | Gauge, feed, health, containment status |
+| `GET /api/health` | Component health snapshot |
+| `GET /api/brief` | AI / template executive brief |
+| `POST /api/demo/scenario` | Inject demo telemetry (`normal`, `port_scan`, `brute_force`, `critical`) |
+| `POST /api/contain` | Demo containment (writes stop flag, decays landscape) |
+| `WS /ws/threats` | Live events + state + health |
 
-## Docker (optional)
+Legacy alias: `POST /api/mitigate` → same as contain.
 
-```bash
-docker compose up --build
+---
+
+## Graceful degradation
+
+| Failure | Behavior |
+|---------|----------|
+| Legacy API down | Status **DEGRADED**, live stream continues |
+| AttackSim stopped | Stream **STOPPED**, history remains |
+| WebSocket drop | Auto-reconnect + `GET /api/state` hydration |
+| LLM unavailable | Template CISO brief |
+| Bridge restart | Clients reconnect; state rebuilt from recent window |
+
+---
+
+## Security considerations
+
+- No secrets in repository — use `.env` / environment variables  
+- Pydantic validation at ingestion boundary  
+- Fixed filesystem paths under `data/` (no user-controlled paths)  
+- Same-origin dashboard (no CORS surface for UI)  
+- LLM receives **minimal normalized fields** from the last ~12 events only  
+- HTML rendering uses Vue text bindings (escaped by default)  
+- Containment endpoint is a **demo control** (local stop flag), not production blocking  
+
+---
+
+## Key architecture decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Python bridge | Normalizes heterogeneous legacy + file telemetry behind one contract |
+| WebSocket | Threat data is streaming; avoids browser polling latency |
+| Deterministic scoring | Explainable, demo-reliable; AI is not on the critical path |
+| Optional LLM | Narrative enrichment without runtime dependency for core detection |
+| Deduplication | Poll + tail ingestion is at-least-once |
+| Vue 3 dashboard | Rich interactive UX for demo storytelling |
+| Same-origin static hosting | Simpler security model for reviewers |
+
+---
+
+## 60-second demo script (for interview)
+
+| Time | Action / narration |
+|------|---------------------|
+| 0:00 | “This is the Threat Command Center — two independent telemetry sources.” |
+| 0:10 | Point to **System Status**: Legacy API + Attack Stream online |
+| 0:15 | Show live normalized event arriving in feed |
+| 0:20 | Click **Critical Attack** scenario |
+| 0:30 | Gauge moves **ELEVATED → CRITICAL**, brief updates |
+| 0:40 | Click **CONTAIN THREAT** |
+| 0:50 | Attack simulator stops, status **CONTAINED**, gauge decays |
+| 1:00 | “The UI never cares where telemetry originated — adapters produce `ThreatEvent`, then scoring and presentation are shared.” |
+
+---
+
+## Development layout
+
+```
+legacy/          ASP.NET raw logs API
+chaos/           AttackSim.ps1
+bridge/          FastAPI analytics bridge
+dashboard/       Vue 3 ESM console — Lumi copilot, voice tour (no build required)
+frontend/        Optional Vite source tree (same UX, componentized)
+dashboard/dist/  Output of ./scripts/build-ui.sh
+scripts/         start-demo.sh, build-ui.sh
 ```
 
-## Development notes
+Default demo UI: **Vue 3** loaded from `dashboard/app.mjs` (works offline after first CDN cache).
 
-Built with AI-assisted scaffolding (Cursor) for velocity; scoring weights, WebSocket contract, and demo orchestration were tuned for a reliable live interview demo.
-
-## Publish to GitHub (submission)
-
-From the project root after `git commit`:
+Optional Vite pipeline:
 
 ```bash
+./scripts/build-ui.sh
+BUILD_VITE_UI=1 ./scripts/start-demo.sh
+```
+
+---
+
+## Deploy a public demo URL
+
+See [DEPLOY.md](DEPLOY.md) for Render, Docker, or ngrok options.
+
+## Publish (submission)
+
+Full checklist, rubric mapping, and **email template**: [CHALLENGE-SUBMISSION.md](CHALLENGE-SUBMISSION.md).
+
+```bash
+# Install GitHub CLI once: https://cli.github.com/
+gh auth login
+git add -A && git commit -m "Threat Command Center — Frankenstein challenge submission"
 gh repo create frankenstein-threat-command-center --public --source=. --remote=origin --push
 ```
 
-Reply to the tech challenge intro email with the public repository URL.
+Email the public repo URL to the challenge contact (template in CHALLENGE-SUBMISSION.md).
 
 ## License
 

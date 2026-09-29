@@ -1,0 +1,366 @@
+/**
+ * Hacker-chic motion — SOC terminal energy without breaking leadership readability.
+ * Respects prefers-reduced-motion.
+ */
+
+.app-shell.app-shell--chic .dashboard-fx .fx-sweep,
+.app-shell.app-shell--chic .dashboard-fx .fx-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Drifting grid + subtle CRT scan */
+.app-shell.app-shell--chic .dashboard-fx .grid-bg {
+  animation: chic-grid-drift 48s linear infinite;
+}
+
+.app-shell.app-shell--chic .dashboard-fx .scanline {
+  display: block;
+  opacity: 0.07;
+  animation: chic-scanline-opacity 6s ease-in-out infinite;
+}
+
+.app-shell.app-shell--chic .dashboard-fx .fx-sweep {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(94, 184, 255, 0.04) 48%,
+    rgba(240, 78, 35, 0.06) 50%,
+    rgba(94, 184, 255, 0.04) 52%,
+    transparent 100%
+  );
+  background-size: 100% 220%;
+  animation: chic-sweep 7s linear infinite;
+  mix-blend-mode: screen;
+}
+
+.app-shell.app-shell--chic .dashboard-fx .fx-noise {
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: chic-noise 0.5s steps(2) infinite;
+}
+
+@keyframes chic-grid-drift {
+  0% {
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+  100% {
+    background-position: 0 0, 0 0, 48px 48px, 48px 48px;
+  }
+}
+
+@keyframes chic-scanline-opacity {
+  0%,
+  100% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.1;
+  }
+}
+
+@keyframes chic-sweep {
+  0% {
+    background-position: 0 -120%;
+  }
+  100% {
+    background-position: 0 120%;
+  }
+}
+
+@keyframes chic-noise {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(-2%, 1%);
+  }
+}
+
+/* Staggered console reveal */
+.app-shell.app-shell--chic.is-ready .platform-value-strip span {
+  animation: chic-rise 0.55s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) backwards;
+}
+
+.app-shell.app-shell--chic.is-ready .platform-value-strip span:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.app-shell.app-shell--chic.is-ready .platform-value-strip span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.app-shell.app-shell--chic.is-ready .platform-value-strip span:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.app-shell.app-shell--chic.is-ready .platform-value-strip span:nth-child(4) {
+  animation-delay: 0.22s;
+}
+
+.app-shell.app-shell--chic.is-ready .unified-analytics-grid .viz-tile {
+  animation: chic-rise 0.65s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) backwards;
+}
+
+.app-shell.app-shell--chic.is-ready .unified-analytics-grid .viz-tile:nth-child(1) {
+  animation-delay: 0.08s;
+}
+.app-shell.app-shell--chic.is-ready .unified-analytics-grid .viz-tile:nth-child(2) {
+  animation-delay: 0.14s;
+}
+.app-shell.app-shell--chic.is-ready .unified-analytics-grid .viz-tile:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.app-shell.app-shell--chic.is-ready .unified-analytics-grid .viz-tile:nth-child(4) {
+  animation-delay: 0.26s;
+}
+.app-shell.app-shell--chic.is-ready .unified-analytics-grid .viz-tile:nth-child(5) {
+  animation-delay: 0.32s;
+}
+
+@keyframes chic-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Live telemetry row energy */
+.app-shell.app-shell--chic .feed-item--new {
+  animation: chic-feed-in 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    chic-feed-glow 1.4s ease 0.1s;
+}
+
+@keyframes chic-feed-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+    filter: brightness(1.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes chic-feed-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(240, 78, 35, 0);
+  }
+  35% {
+    box-shadow: 0 0 24px rgba(240, 78, 35, 0.25);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+.app-shell.app-shell--chic .feed-icon {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.app-shell.app-shell--chic .feed-item:hover .feed-icon {
+  transform: scale(1.06);
+  box-shadow: 0 0 14px rgba(240, 78, 35, 0.35);
+}
+
+/* Charts */
+.app-shell.app-shell--chic .pie-slice {
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+
+.app-shell.app-shell--chic .pie-svg--tile:hover .pie-slice:not(:hover) {
+  opacity: 0.72;
+}
+
+.app-shell.app-shell--chic .pie-slice:hover {
+  filter: brightness(1.12) drop-shadow(0 0 6px rgba(94, 184, 255, 0.45));
+}
+
+.app-shell.app-shell--chic .trend-line {
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: chic-trend-draw 1.8s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
+}
+
+.app-shell.app-shell--chic .trend-area {
+  animation: chic-fade-in 1.2s ease 0.35s backwards;
+}
+
+@keyframes chic-trend-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes chic-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.app-shell.app-shell--chic .hbar-fill {
+  transition: width 0.55s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  box-shadow: 0 0 12px rgba(240, 78, 35, 0.35);
+}
+
+/* Section nav scan underline */
+.app-shell.app-shell--chic .section-jump-btn.active {
+  position: relative;
+  color: #fafafa;
+}
+
+.app-shell.app-shell--chic .section-jump-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--pan-orange), transparent);
+  animation: chic-underline-scan 2.2s ease-in-out infinite;
+}
+
+@keyframes chic-underline-scan {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scaleX(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* Critical posture */
+.app-shell.app-shell--chic.critical .command-deck {
+  animation: chic-critical-pulse 2.8s ease-in-out infinite;
+}
+
+.app-shell.app-shell--chic.critical .command-headline {
+  animation: chic-glitch-text 5s steps(1) infinite;
+}
+
+@keyframes chic-critical-pulse {
+  0%,
+  100% {
+    border-color: rgba(255, 92, 92, 0.35);
+  }
+  50% {
+    border-color: rgba(255, 92, 92, 0.65);
+  }
+}
+
+@keyframes chic-glitch-text {
+  0%,
+  96%,
+  100% {
+    text-shadow: none;
+    transform: none;
+  }
+  97% {
+    text-shadow: 2px 0 rgba(94, 184, 255, 0.8), -2px 0 rgba(240, 78, 35, 0.8);
+    transform: translateX(-1px);
+  }
+  98% {
+    text-shadow: -2px 0 rgba(94, 184, 255, 0.6), 2px 0 rgba(240, 78, 35, 0.6);
+    transform: translateX(1px);
+  }
+}
+
+.app-shell.app-shell--chic .pill.live .pill-dot {
+  animation: chic-pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes chic-pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.65;
+  }
+}
+
+/* Brief terminal cursor vibe */
+.app-shell.app-shell--chic .brief-terminal--pulse {
+  animation: brief-glow 1.2s ease, chic-terminal-scan 0.9s ease;
+}
+
+@keyframes chic-terminal-scan {
+  0% {
+    box-shadow: inset 0 0 0 rgba(61, 214, 140, 0);
+  }
+  40% {
+    box-shadow: inset 0 0 40px rgba(61, 214, 140, 0.12);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+/* Lumi idle float */
+.app-shell.app-shell--chic .copilot-fab--lumi:not(.copilot-fab--open) .lumi-avatar--fab {
+  animation: chic-lumi-float 4.5s ease-in-out infinite;
+}
+
+@keyframes chic-lumi-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.app-shell.app-shell--chic .ops-clock {
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell.app-shell--chic.critical .cta--contain:not(:disabled) {
+  animation: chic-cta-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes chic-cta-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(255, 92, 92, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 92, 92, 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell.app-shell--chic .dashboard-fx .grid-bg,
+  .app-shell.app-shell--chic .dashboard-fx .scanline,
+  .app-shell.app-shell--chic .dashboard-fx .fx-sweep,
+  .app-shell.app-shell--chic .dashboard-fx .fx-noise,
+  .app-shell.app-shell--chic .platform-value-strip span,
+  .app-shell.app-shell--chic .unified-analytics-grid .viz-tile,
+  .app-shell.app-shell--chic .feed-item--new,
+  .app-shell.app-shell--chic .trend-line,
+  .app-shell.app-shell--chic .trend-area,
+  .app-shell.app-shell--chic.critical .command-deck,
+  .app-shell.app-shell--chic.critical .command-headline,
+  .app-shell.app-shell--chic .copilot-fab--lumi .lumi-avatar--fab,
+  .app-shell.app-shell--chic .section-jump-btn.active::after {
+    animation: none !important;
+  }
+
+  .app-shell.app-shell--chic .trend-line {
+    stroke-dashoffset: 0;
+  }
+}

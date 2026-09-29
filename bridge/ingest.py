@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import json
 import re
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable
 
 import httpx
 
-from models import ThreatEvent
+from dedup import assign_event_id, deterministic_event_id
+from health import HealthMonitor
+from models import TelemetrySource, ThreatEvent
 
 JSON_OBJECT_PATTERN = re.compile(r"\{[^{}]*\}")
 
@@ -50,15 +51,22 @@ def live_entry_to_event(data: dict[str, Any]) -> ThreatEvent | None:
     except ValueError:
         ts = datetime.now(timezone.utc)
 
-    return ThreatEvent(
-        id=str(uuid.uuid4()),
+    attack_type = str(data.get("type", "Unknown"))
+    source_ip = str(data.get("origin", "0.0.0.0"))
+    destination = str(data.get("destination", "web-app-01"))
+
+    event = ThreatEvent(
+        event_id="pending",
         timestamp=ts,
-        source="live",
-        event_type=str(data.get("type", "Unknown")),
-        origin=str(data.get("origin", "0.0.0.0")),
-        severity=severity,
-        raw=data,
+        source=TelemetrySource.LIVE_STREAM,
+        attack_type=attack_type,
+        source_ip=source_ip,
+        destination=destination,
+        status="Detected",
+        raw_severity=severity,
+        metadata={"upstream": "live_stream.log", "raw": data},
     )
+    return assign_event_id(event)
 
 
 def _row_field(row: dict[str, Any], *keys: str, default: str = "") -> str:
@@ -77,25 +85,47 @@ def legacy_row_to_event(row: dict[str, Any]) -> ThreatEvent:
     else:
         ts = datetime.now(timezone.utc)
 
-    event_name = _row_field(row, "Event", "event", default="Unknown")
-    status = _row_field(row, "Status", "status")
+    attack_type = _row_field(row, "Event", "event", default="Unknown")
+    status = _row_field(row, "Status", "status") or "Observed"
+    source_ip = _row_field(row, "Source", "source", default="unknown")
     severity = 6 if status in ("Failed", "Denied", "Blocked") else 4
 
-    return ThreatEvent(
-        id=str(uuid.uuid4()),
+    event = ThreatEvent(
+        event_id="pending",
         timestamp=ts,
-        source="legacy",
-        event_type=event_name,
-        origin=_row_field(row, "Source", "source", default="unknown"),
-        severity=severity,
-        status=status or None,
-        raw=row,
+        source=TelemetrySource.LEGACY_API,
+        attack_type=attack_type,
+        source_ip=source_ip,
+        destination="legacy-saas-core",
+        status=status,
+        raw_severity=severity,
+        metadata={"upstream": "legacy_api", "raw": row},
+    )
+    return assign_event_id(event)
+
+
+def legacy_dedupe_key(row: dict[str, Any]) -> str:
+    ts_raw = row.get("Timestamp") or row.get("timestamp") or ""
+    attack = _row_field(row, "Event", "event", default="Unknown")
+    source_ip = _row_field(row, "Source", "source", default="unknown")
+    return deterministic_event_id(
+        TelemetrySource.LEGACY_API.value,
+        str(ts_raw),
+        attack,
+        source_ip,
+        "legacy-saas-core",
     )
 
 
 class LogTailer:
-    def __init__(self, log_path: Path, on_events: Callable[[list[ThreatEvent]], Awaitable[None]]) -> None:
+    def __init__(
+        self,
+        log_path: Path,
+        health: HealthMonitor,
+        on_events: Callable[[list[ThreatEvent]], Awaitable[None]],
+    ) -> None:
         self._path = log_path
+        self._health = health
         self._on_events = on_events
         self._offset = 0
         if self._path.exists():
@@ -107,15 +137,16 @@ class LogTailer:
         size = self._path.stat().st_size
         if size <= self._offset:
             return
-        with self._path.open("r", encoding="utf-8", errors="replace") as f:
-            f.seek(self._offset)
-            chunk = f.read()
-            self._offset = f.tell()
+        with self._path.open("r", encoding="utf-8", errors="replace") as handle:
+            handle.seek(self._offset)
+            chunk = handle.read()
+            self._offset = handle.tell()
 
         parsed = parse_log_chunk(chunk)
-        events = [live_entry_to_event(p) for p in parsed]
-        events = [e for e in events if e is not None]
+        events = [live_entry_to_event(item) for item in parsed]
+        events = [event for event in events if event is not None]
         if events:
+            self._health.mark_stream_activity()
             await self._on_events(events)
 
 
@@ -123,10 +154,12 @@ class LegacyPoller:
     def __init__(
         self,
         base_url: str,
+        health: HealthMonitor,
         on_events: Callable[[list[ThreatEvent]], Awaitable[None]],
         interval: float = 5.0,
     ) -> None:
         self._base_url = base_url.rstrip("/")
+        self._health = health
         self._on_events = on_events
         self._interval = interval
         self._seen: set[str] = set()
@@ -140,17 +173,18 @@ class LegacyPoller:
             while not stop():
                 try:
                     use_jitter = self._bootstrapped
-                    params = {"jitter": "1"} if use_jitter else None
+                    params = {"jitter": "true"} if use_jitter else None
                     resp = await client.get(
                         f"{self._base_url}/api/raw-logs", params=params
                     )
                     resp.raise_for_status()
                     rows = resp.json()
+                    self._health.mark_legacy_ok()
                     new_events: list[ThreatEvent] = []
 
                     if not self._bootstrapped:
                         for row in rows:
-                            key = json.dumps(row, sort_keys=True, default=str)
+                            key = legacy_dedupe_key(row)
                             if key in self._seen:
                                 continue
                             self._seen.add(key)
@@ -160,12 +194,19 @@ class LegacyPoller:
                         now = time.time()
                         if rows and now - self._last_jitter_emit >= 8.0:
                             self._last_jitter_emit = now
-                            new_events.append(legacy_row_to_event(rows[0]))
+                            row = rows[0]
+                            key = legacy_dedupe_key(row)
+                            if key not in self._seen:
+                                self._seen.add(key)
+                                new_events.append(legacy_row_to_event(row))
+
+                    if len(self._seen) > 800:
+                        self._seen.clear()
 
                     if new_events:
                         await self._on_events(new_events)
-                except httpx.HTTPError:
-                    pass
+                except httpx.HTTPError as exc:
+                    self._health.mark_legacy_error(str(exc))
                 await asyncio_sleep(self._interval)
 
 

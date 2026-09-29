@@ -1,5 +1,6 @@
 data/live_stream.log
 data/.attack_stop
+data/narration_audio/
 .env
 __pycache__/
 *.pyc
@@ -9,3 +10,5 @@ legacy/bin/
 legacy/obj/
 *.user
 .DS_Store
+frontend/node_modules/
+dashboard/dist/

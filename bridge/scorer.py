@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import time
 from collections import deque
 
@@ -15,6 +16,8 @@ ATTACK_WEIGHTS: dict[str, float] = {
     "File Access": 0.7,
     "DNS Query": 0.4,
     "Admin Escalation": 0.95,
+    "MITIGATION": 0.1,
+    "CONTAINMENT": 0.1,
 }
 
 LEGACY_EVENT_WEIGHTS: dict[str, float] = {
@@ -27,64 +30,101 @@ LEGACY_EVENT_WEIGHTS: dict[str, float] = {
 
 
 class ThreatScorer:
-    """Deterministic 0–100 scoring with velocity bonus and global EMA."""
+    """
+    Event risk_score: per-event deterministic 0–100.
+    Global score: time-decayed landscape (frequency, diversity, recency) — not a single spike forever.
+    """
 
-    def __init__(self, ema_alpha: float = 0.25) -> None:
-        self._ema_alpha = ema_alpha
-        self._global_score = 0.0
-        self._event_times: deque[float] = deque(maxlen=200)
-        self._mitigated_until: float = 0.0
-
-    @property
-    def global_score(self) -> float:
-        if time.time() < self._mitigated_until:
-            decay = self._mitigated_until - time.time()
-            return max(0.0, self._global_score * (decay / 10.0))
-        return self._global_score
-
-    def apply_mitigation_decay(self, seconds: float = 10.0) -> None:
-        self._mitigated_until = time.time() + seconds
-        self._global_score = min(self._global_score, 25.0)
+    def __init__(self) -> None:
+        self._landscape: deque[tuple[float, float, str]] = deque(maxlen=300)
+        self._contained_until: float = 0.0
+        self._global_floor: float = 0.0
 
     def score_event(self, event: ThreatEvent) -> tuple[float, ThreatLevel]:
-        weight = ATTACK_WEIGHTS.get(event.event_type) or LEGACY_EVENT_WEIGHTS.get(
-            event.event_type, 0.5
+        weight = ATTACK_WEIGHTS.get(event.attack_type) or LEGACY_EVENT_WEIGHTS.get(
+            event.attack_type, 0.5
         )
-        base = weight * (event.severity / 10.0) * 100.0
+        base = weight * (event.raw_severity / 10.0) * 100.0
 
         if event.status in ("Failed", "Denied", "Blocked"):
             base += 15.0
 
+        risk = min(100.0, max(0.0, base))
+        event_level = self._event_level(risk, event.raw_severity)
+
         now = time.time()
-        self._event_times.append(now)
-        cutoff = now - 60.0
-        while self._event_times and self._event_times[0] < cutoff:
-            self._event_times.popleft()
-        velocity = len(self._event_times)
-        velocity_bonus = min(20.0, velocity * 2.0)
-        base += velocity_bonus
+        self._landscape.append((now, risk, event.attack_type))
+        return round(risk, 1), event_level
 
-        score = min(100.0, max(0.0, base))
-        level = self._level_for(score, event.severity)
+    @property
+    def global_score(self) -> float:
+        now = time.time()
+        if now < self._contained_until:
+            remaining = self._contained_until - now
+            decay_factor = remaining / 12.0
+            return max(0.0, self._compute_landscape(now) * decay_factor)
 
-        self._global_score = (
-            self._ema_alpha * score + (1.0 - self._ema_alpha) * self._global_score
-        )
-        global_level = self._level_for(self.global_score, event.severity)
-        if level == ThreatLevel.CRITICAL or global_level == ThreatLevel.CRITICAL:
-            level = ThreatLevel.CRITICAL
+        landscape = self._compute_landscape(now)
+        if landscape < self._global_floor:
+            self._global_floor = max(0.0, self._global_floor - 0.5)
+        return max(landscape, self._global_floor)
 
-        return round(score, 1), level
+    def apply_containment(self, seconds: float = 12.0) -> None:
+        self._contained_until = time.time() + seconds
+        self._global_floor = min(self.global_score, 18.0)
 
     def global_threat_level(self) -> ThreatLevel:
-        return self._level_for(self.global_score, 1)
+        return self._landscape_level(self.global_score)
+
+    def _compute_landscape(self, now: float) -> float:
+        window_seconds = 120.0
+        weighted_sum = 0.0
+        weight_total = 0.0
+        recent_types: set[str] = set()
+        recent_count = 0
+
+        for ts, risk, attack_type in self._landscape:
+            age = now - ts
+            if age > window_seconds:
+                continue
+            w = math.exp(-age / 45.0)
+            weighted_sum += risk * w
+            weight_total += w
+            recent_types.add(attack_type)
+            if age <= 60.0:
+                recent_count += 1
+
+        if weight_total == 0:
+            return 0.0
+
+        base = weighted_sum / weight_total
+        diversity_bonus = min(12.0, len(recent_types) * 3.0)
+        frequency_bonus = min(12.0, recent_count * 1.5)
+        recent_risks = [r for ts, r, _ in self._landscape if now - ts <= 30]
+        peak = max(recent_risks) if recent_risks else 0.0
+
+        score = base + diversity_bonus + frequency_bonus
+        if peak >= 85:
+            score = max(score, peak * 0.85)
+
+        return min(100.0, max(0.0, score))
 
     @staticmethod
-    def _level_for(score: float, severity: int) -> ThreatLevel:
-        if severity >= 8 or score >= 85:
+    def _event_level(risk: float, raw_severity: int) -> ThreatLevel:
+        if raw_severity >= 9 or risk >= 90:
             return ThreatLevel.CRITICAL
-        if score >= 65:
+        if raw_severity >= 7 or risk >= 72:
             return ThreatLevel.HIGH
-        if score >= 40:
+        if risk >= 42:
+            return ThreatLevel.ELEVATED
+        return ThreatLevel.LOW
+
+    @staticmethod
+    def _landscape_level(global_score: float) -> ThreatLevel:
+        if global_score >= 78:
+            return ThreatLevel.CRITICAL
+        if global_score >= 58:
+            return ThreatLevel.HIGH
+        if global_score >= 35:
             return ThreatLevel.ELEVATED
         return ThreatLevel.LOW

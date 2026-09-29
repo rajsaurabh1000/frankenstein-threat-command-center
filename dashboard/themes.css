@@ -1,0 +1,12 @@
+/* Dark command center — chart & viz tokens */
+html[data-theme="dark"],
+html:not([data-theme]) {
+  --chart-trend: #5eb8ff;
+  --chart-trend-fill: rgba(45, 212, 255, 0.12);
+  --pie-hole: var(--bg-2);
+  --pie-ring-empty: rgba(255, 255, 255, 0.08);
+  --pie-label: var(--text);
+  --pie-label-muted: var(--muted);
+  --viz-tile-bg: rgba(0, 0, 0, 0.22);
+  --gauge-track: rgba(255, 255, 255, 0.06);
+}

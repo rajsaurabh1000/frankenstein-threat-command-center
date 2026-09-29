@@ -1,0 +1,5 @@
+{
+  "id": "copilot-intro",
+  "title": "Problem, architecture, and approach",
+  "text": "Organizations often operate two parallel telemetry paths: a legacy enterprise API and a high-velocity live stream. Without a shared contract, scoring diverges, queues fragment, and executive reporting lags the SOC. Threat Command Center ingests both sources through the analytics bridge, normalizes to ThreatEvent version one, deduplicates and scores deterministically, maintains a single landscape posture, enriches an executive brief, and exposes containment hooks back to the simulator. The diagram mirrors a Lucidchart or Excalidraw reference topology: sources, bridge, console, response loop. Next I will cover each product surface, then run a standard critical-campaign workflow end to end."
+}

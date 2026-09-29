@@ -2,71 +2,45 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      document.documentElement.setAttribute("data-theme", "dark");
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Frankenstein Threat Command Center</title>
+    <meta name="description" content="Threat Command Center — Palo Alto Networks aligned SOC console for unified telemetry, landscape scoring, and AI-assisted response." />
+    <title>Threat Command Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/themes.css" />
+    <link rel="stylesheet" href="/static/world-ui.css" />
+    <link rel="stylesheet" href="/static/motion.css" />
+    <link rel="stylesheet" href="/static/leadership-layout.css" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
-    <div class="vignette" id="vignette"></div>
-    <header class="top-bar">
-      <div class="brand">
-        <span class="brand-mark">◈</span>
-        <div>
-          <h1>Frankenstein Threat Command Center</h1>
-          <p>Legacy telemetry × live attack stream × AI analytics bridge</p>
-        </div>
+    <div id="app">
+      <div class="boot-screen">
+        <div class="boot-logo" aria-hidden="true"></div>
+        <div class="boot-progress" aria-hidden="true"><div class="boot-progress-bar"></div></div>
+        <p>Loading Threat Command Center</p>
       </div>
-      <div class="status-pill" id="connectionStatus">CONNECTING</div>
-    </header>
-
-    <main class="grid">
-      <section class="panel feed-panel">
-        <div class="panel-head">
-          <h2>Live Threat Feed</h2>
-          <span id="eventCount">0 events</span>
-        </div>
-        <ul id="feedList" class="feed-list"></ul>
-      </section>
-
-      <section class="panel gauge-panel">
-        <div class="panel-head">
-          <h2>Global Threat Level</h2>
-          <span id="globalLevel">LOW</span>
-        </div>
-        <div class="gauge-wrap">
-          <svg viewBox="0 0 200 200" class="gauge-svg" aria-hidden="true">
-            <circle cx="100" cy="100" r="88" class="gauge-track" />
-            <circle cx="100" cy="100" r="88" class="gauge-value" id="gaugeArc" />
-          </svg>
-          <div class="gauge-center">
-            <span id="gaugeScore">0</span>
-            <small>/ 100</small>
-          </div>
-        </div>
-        <button type="button" class="mitigate-btn" id="mitigateBtn">
-          MITIGATE ATTACK
-        </button>
-        <p class="mitigate-hint">Stops AttackSim and decays global threat score</p>
-      </section>
-
-      <section class="panel brief-panel">
-        <div class="panel-head">
-          <h2>AI Attack Brief</h2>
-          <span id="briefMode">template</span>
-        </div>
-        <p id="briefText" class="brief-text"></p>
-        <div class="brief-footer">
-          <span id="briefUpdated">—</span>
-        </div>
-      </section>
-    </main>
-
-    <script src="/static/app.js"></script>
+    </div>
+    <script type="module">
+      import("/static/app.mjs").catch((err) => {
+        const root = document.getElementById("app");
+        root.innerHTML =
+          '<div class="boot-screen"><p style="color:#ff5c5c">Dashboard failed to load.</p>' +
+          '<p style="font-size:12px;color:#94a3b8;max-width:480px;margin:1rem auto">' +
+          String(err) +
+          "</p><p style=\"font-size:12px;color:#94a3b8\">Try: rm -rf bridge/.venv && ./scripts/start-demo.sh</p></div>";
+        console.error(err);
+      });
+    </script>
   </body>
 </html>
