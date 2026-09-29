@@ -21,6 +21,11 @@ ATTACK_WEIGHTS: dict[str, float] = {
 }
 
 LANDSCAPE_PRIOR_WEIGHT = 2.0  # pseudo-events at risk 0 in the landscape's weighted mean
+# A severity >= 9 hit holds the landscape at CRITICAL (>= 80) for this long, so the gauge
+# visibly flashes red on each high-severity AttackSim hit and then falls back.
+SEVERITY_FLASH_SECONDS = 4.0
+SEVERITY_FLASH_MIN = 9
+SEVERITY_FLASH_SCORE = 80.0
 
 LEGACY_EVENT_WEIGHTS: dict[str, float] = {
     "Login Attempt": 0.5,
@@ -38,7 +43,7 @@ class ThreatScorer:
     """
 
     def __init__(self) -> None:
-        self._landscape: deque[tuple[float, float, str]] = deque(maxlen=300)
+        self._landscape: deque[tuple[float, float, str, int]] = deque(maxlen=300)
         self._contained_until: float = 0.0
         self._contained_at: float = 0.0
         self._global_floor: float = 0.0
@@ -56,7 +61,7 @@ class ThreatScorer:
         event_level = self._event_level(risk, event.raw_severity)
 
         now = time.time()
-        self._landscape.append((now, risk, event.attack_type))
+        self._landscape.append((now, risk, event.attack_type, event.raw_severity))
         return round(risk, 1), event_level
 
     @property
@@ -91,7 +96,7 @@ class ThreatScorer:
         recent_types: set[str] = set()
         recent_count = 0
 
-        for ts, risk, attack_type in self._landscape:
+        for ts, risk, attack_type, _sev in self._landscape:
             age = now - ts
             if age > window_seconds or ts <= since:
                 continue
@@ -111,12 +116,18 @@ class ThreatScorer:
         base = weighted_sum / (weight_total + LANDSCAPE_PRIOR_WEIGHT)
         diversity_bonus = min(12.0, len(recent_types) * 3.0)
         frequency_bonus = min(12.0, recent_count * 1.5)
-        recent_risks = [r for ts, r, _ in self._landscape if now - ts <= 30 and ts > since]
+        recent_risks = [r for ts, r, _, _ in self._landscape if now - ts <= 30 and ts > since]
         peak = max(recent_risks) if recent_risks else 0.0
 
         score = base + diversity_bonus + frequency_bonus
         if peak >= 85:
             score = max(score, peak * 0.85)
+        flash = any(
+            sev >= SEVERITY_FLASH_MIN and now - ts <= SEVERITY_FLASH_SECONDS and ts > since
+            for ts, _, _, sev in self._landscape
+        )
+        if flash:
+            score = max(score, SEVERITY_FLASH_SCORE)
 
         return min(100.0, max(0.0, score))
 

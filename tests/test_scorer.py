@@ -89,3 +89,34 @@ def test_single_noisy_event_does_not_read_as_high():
     scorer = ThreatScorer()
     scorer.score_event(make_event("SSH Connection", 6, status="Failed"))  # risk 60, e.g. legacy noise
     assert scorer.global_threat_level() is ThreatLevel.LOW
+
+
+def test_severity_nine_hit_flashes_gauge_red_then_falls_back(monkeypatch):
+    import scorer as scorer_module
+
+    clock = [1000.0]
+    monkeypatch.setattr(scorer_module.time, "time", lambda: clock[0])
+    scorer = ThreatScorer()
+    for _ in range(4):
+        clock[0] += 2
+        scorer.score_event(make_event("Port Scan", 4))
+    assert scorer.global_threat_level() is not ThreatLevel.CRITICAL
+
+    clock[0] += 2
+    scorer.score_event(make_event("Brute Force", 9))  # high-severity AttackSim hit (risk 76.5)
+    assert scorer.global_threat_level() is ThreatLevel.CRITICAL
+
+    clock[0] += scorer_module.SEVERITY_FLASH_SECONDS + 1
+    assert scorer.global_threat_level() is not ThreatLevel.CRITICAL
+
+
+def test_contained_high_severity_hit_does_not_flash(monkeypatch):
+    import scorer as scorer_module
+
+    clock = [1000.0]
+    monkeypatch.setattr(scorer_module.time, "time", lambda: clock[0])
+    scorer = ThreatScorer()
+    scorer.score_event(make_event("Brute Force", 9))
+    scorer.apply_containment(12.0)
+    clock[0] += 13
+    assert scorer.global_threat_level() is ThreatLevel.LOW

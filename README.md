@@ -90,7 +90,7 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 | 1 | **Analytics Bridge (Python)** — watches `live_stream.log` **and** the LegacyLogger API, scores each event | [`bridge/ingest.py`](bridge/ingest.py) (tailer + poller), [`bridge/scorer.py`](bridge/scorer.py) (scoring), [`bridge/main.py`](bridge/main.py) (FastAPI + WebSocket) | ✅ |
 | 2a | **Command Center (HTML5/JS)** — dark-mode, "hacker-chic" | [`dashboard/`](dashboard/) — Vue 3 ESM, no build step | ✅ |
 | 2b | **Live Feed** of incoming threats | WebSocket `/ws/threats` → Telemetry queue | ✅ |
-| 2c | **Global threat gauge** that turns red on high-severity hits | Posture gauge (LOW → ELEVATED → HIGH → **CRITICAL**) driven by a time-decayed landscape score | ✅ |
+| 2c | **Global threat gauge** that turns red on high-severity hits | Posture gauge (LOW → ELEVATED → HIGH → **CRITICAL**) driven by a time-decayed landscape score. Every severity-9 hit from AttackSim flashes it **red** for 4 s | ✅ |
 | 3 | **"Sales Edge"** jaw-drop feature | **All three suggested examples, plus one more:** AI Threat Brief + playbook, **Contain** button that actually stops the PowerShell script, **Lumi** voice-guided AI copilot, and executive Q&A ("Ask Lumi") | ✅ |
 | 4 | **Public GitHub repository** | This repo | ✅ |
 
@@ -324,6 +324,7 @@ One critical hit from ten minutes ago should **not** pin the gauge red forever. 
 | Diversity bonus | `+3` per unique technique, max `+12` |
 | Frequency bonus | `+1.5` per event in the last 60 s, max `+12` |
 | Peak floor | if any event in the last 30 s has risk ≥ 85, score ≥ `0.85 × peak` |
+| Severity flash | a severity ≥ 9 hit holds the score at ≥ 80 (**CRITICAL**, red) for 4 s, so the gauge visibly turns red on each high-severity AttackSim hit and then falls back. On a live stream that is about 3 red flashes a minute, red roughly a quarter of the time |
 | Containment | events observed before **Contain** fade out linearly over 12 s and then stop counting, so the gauge can't rebound to CRITICAL from an attack that was already contained. New activity after Contain (e.g. a fresh inject) counts normally |
 
 **Gauge level:** `CRITICAL` ≥ 78 · `HIGH` ≥ 58 · `ELEVATED` ≥ 35 · `LOW` < 35.
@@ -551,11 +552,11 @@ frankenstein-threat-command-center/
 
 ## 16. Tests
 
-A focused `pytest` suite (29 tests, under a second) covers the parts that carry the architecture:
+A focused `pytest` suite (31 tests, under a second) covers the parts that carry the architecture:
 
 | File | What it proves |
 |------|----------------|
-| [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape and a contained attack can't rebound after the window, a single noisy event stays LOW |
+| [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape and a contained attack can't rebound after the window, a single noisy event stays LOW, a severity-9 hit flashes CRITICAL and falls back (but not once contained) |
 | [`tests/test_brief.py`](tests/test_brief.py) | A posture change regenerates the brief even inside the throttle window, so brief and gauge never disagree; `updated_at` is the real generation time |
 | [`tests/test_dedup.py`](tests/test_dedup.py) | Deterministic, field-sensitive `event_id`s; a repeated observation is dropped; the cache is bounded |
 | [`tests/test_ingest.py`](tests/test_ingest.py) | JSON-lines, concatenated, and truncated log writes; PowerShell and ASP.NET payloads both map to `ThreatEvent` v1; severity clamping and defaults |
