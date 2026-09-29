@@ -19,6 +19,8 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Watch the live feed and gau
 - Python 3.11+
 - [PowerShell (`pwsh`)](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-macos) for the attack simulator
 
+**Troubleshooting:** If you see `pydantic_core ... incompatible architecture (have 'arm64', need 'x86_64')`, your venv was built with a different CPU arch than the shell running the demo (often x86_64 PowerShell on Apple Silicon). Run `rm -rf bridge/.venv` and start again with `./scripts/start-demo.sh` (the script auto-recreates the venv). On Apple Silicon, running the demo from **Terminal.app** or **zsh** is the most reliable option.
+
 Optional: copy `.env.example` to `.env` and set `OPENAI_API_KEY` for LLM-generated CISO briefs (template brief works without a key).
 
 ## Architecture

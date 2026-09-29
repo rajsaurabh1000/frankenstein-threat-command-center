@@ -10,11 +10,31 @@ mkdir -p data
 : > data/live_stream.log
 rm -f data/.attack_stop
 
-if [[ ! -d bridge/.venv ]]; then
-  python3 -m venv bridge/.venv
-  bridge/.venv/bin/pip install -q -r bridge/requirements.txt
+# Prefer native Python on Apple Silicon (PowerShell under Rosetta often uses x86_64).
+if [[ "$(uname -m)" == "arm64" ]] && command -v /usr/bin/arch >/dev/null 2>&1; then
+  PYTHON_BOOT="arch -arm64 python3"
 else
-  bridge/.venv/bin/pip install -q -r bridge/requirements.txt
+  PYTHON_BOOT="python3"
+fi
+
+venv_healthy() {
+  [[ -x bridge/.venv/bin/python ]] &&
+    bridge/.venv/bin/python -c "import pydantic_core" >/dev/null 2>&1
+}
+
+if ! venv_healthy; then
+  if [[ -d bridge/.venv ]]; then
+    echo "Recreating bridge/.venv (Python architecture mismatch — common when using x86_64 PowerShell)..."
+    rm -rf bridge/.venv
+  fi
+  $PYTHON_BOOT -m venv bridge/.venv
+fi
+
+bridge/.venv/bin/python -m pip install -q -r bridge/requirements.txt
+
+if ! venv_healthy; then
+  echo "ERROR: bridge virtualenv failed pydantic import. Try: rm -rf bridge/.venv && ./scripts/start-demo.sh"
+  exit 1
 fi
 
 cleanup() {
@@ -34,7 +54,7 @@ echo "Starting Analytics Bridge (Python) on :8000..."
   export DATA_DIR="$ROOT/data"
   export LEGACY_API_URL="http://127.0.0.1:5080"
   if [[ -f "$ROOT/.env" ]]; then set -a; source "$ROOT/.env"; set +a; fi
-  .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+  .venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
 ) &
 BRIDGE_PID=$!
 
