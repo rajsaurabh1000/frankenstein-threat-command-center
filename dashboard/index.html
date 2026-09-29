@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frankenstein Threat Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="vignette" id="vignette"></div>
+    <header class="top-bar">
+      <div class="brand">
+        <span class="brand-mark">◈</span>
+        <div>
+          <h1>Frankenstein Threat Command Center</h1>
+          <p>Legacy telemetry × live attack stream × AI analytics bridge</p>
+        </div>
+      </div>
+      <div class="status-pill" id="connectionStatus">CONNECTING</div>
+    </header>
+
+    <main class="grid">
+      <section class="panel feed-panel">
+        <div class="panel-head">
+          <h2>Live Threat Feed</h2>
+          <span id="eventCount">0 events</span>
+        </div>
+        <ul id="feedList" class="feed-list"></ul>
+      </section>
+
+      <section class="panel gauge-panel">
+        <div class="panel-head">
+          <h2>Global Threat Level</h2>
+          <span id="globalLevel">LOW</span>
+        </div>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 200 200" class="gauge-svg" aria-hidden="true">
+            <circle cx="100" cy="100" r="88" class="gauge-track" />
+            <circle cx="100" cy="100" r="88" class="gauge-value" id="gaugeArc" />
+          </svg>
+          <div class="gauge-center">
+            <span id="gaugeScore">0</span>
+            <small>/ 100</small>
+          </div>
+        </div>
+        <button type="button" class="mitigate-btn" id="mitigateBtn">
+          MITIGATE ATTACK
+        </button>
+        <p class="mitigate-hint">Stops AttackSim and decays global threat score</p>
+      </section>
+
+      <section class="panel brief-panel">
+        <div class="panel-head">
+          <h2>AI Attack Brief</h2>
+          <span id="briefMode">template</span>
+        </div>
+        <p id="briefText" class="brief-text"></p>
+        <div class="brief-footer">
+          <span id="briefUpdated">—</span>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

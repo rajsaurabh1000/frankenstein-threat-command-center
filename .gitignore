@@ -1,0 +1,11 @@
+data/live_stream.log
+data/.attack_stop
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+legacy/bin/
+legacy/obj/
+*.user
+.DS_Store

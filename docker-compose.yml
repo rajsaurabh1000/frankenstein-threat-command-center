@@ -1,0 +1,34 @@
+services:
+  legacy:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /app
+    volumes:
+      - ./legacy:/app
+    command: dotnet run --urls http://0.0.0.0:5080
+    ports:
+      - "5080:5080"
+
+  bridge:
+    build:
+      context: .
+      dockerfile: bridge/Dockerfile
+    environment:
+      LEGACY_API_URL: http://legacy:5080
+      DATA_DIR: /data
+      DASHBOARD_DIR: /dashboard
+    volumes:
+      - ./data:/data
+      - ./dashboard:/dashboard:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - legacy
+
+  chaos:
+    image: mcr.microsoft.com/powershell:latest
+    working_dir: /repo
+    volumes:
+      - .:/repo
+    command: pwsh -File /repo/chaos/AttackSim.ps1
+    depends_on:
+      - bridge
