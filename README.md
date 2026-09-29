@@ -21,14 +21,13 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 8. [The "Sales Edge" features](#8-the-sales-edge-features)
 9. [API reference](#9-api-reference)
 10. [Configuration](#10-configuration)
-11. [Demo script (for the interview)](#11-demo-script-for-the-interview)
-12. [Resilience & graceful degradation](#12-resilience--graceful-degradation)
-13. [Security considerations](#13-security-considerations)
-14. [Key design decisions](#14-key-design-decisions)
-15. [How AI tools were used ("The Vibe")](#15-how-ai-tools-were-used-the-vibe)
-16. [Repository layout](#16-repository-layout)
-17. [Troubleshooting](#17-troubleshooting)
-18. [Known limitations & next steps](#18-known-limitations--next-steps)
+11. [Resilience & graceful degradation](#11-resilience--graceful-degradation)
+12. [Security considerations](#12-security-considerations)
+13. [Key design decisions](#13-key-design-decisions)
+14. [How AI tools were used ("The Vibe")](#14-how-ai-tools-were-used-the-vibe)
+15. [Repository layout](#15-repository-layout)
+16. [Troubleshooting](#16-troubleshooting)
+17. [Known limitations & next steps](#17-known-limitations--next-steps)
 
 ---
 
@@ -95,7 +94,7 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 |-----------|--------|-----------------|
 | **Aesthetic** | 40% | Palo Alto–branded dark SOC console: animated posture gauge, live telemetry queue, analytics tiles, executive brief, action dock, a guided copilot tour with neural-voice narration. See the [screenshots](#screenshots). |
 | **Architecture** | 40% | C# → Python → browser in one flow, with a **canonical `ThreatEvent` v1 contract**, source adapters, deterministic IDs, deduplication, explainable scoring, per-source health, WebSocket push, and a **closed response loop** back to PowerShell via a stop-flag file. See [§4](#4-architecture). |
-| **The Vibe** | 20% | AI tools generated the boilerplate (FastAPI scaffold, Vue shell, CSS, narration copy), while the parts that need judgment were designed by hand: the contract, scoring, dedup, and security boundaries. See [§15](#15-how-ai-tools-were-used-the-vibe). |
+| **The Vibe** | 20% | AI tools generated the boilerplate (FastAPI scaffold, Vue shell, CSS, narration copy), while the parts that need judgment were designed by hand: the contract, scoring, dedup, and security boundaries. See [§14](#14-how-ai-tools-were-used-the-vibe). |
 
 ### Screenshots
 
@@ -424,22 +423,7 @@ A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included
 
 ---
 
-## 11. Demo script (for the interview)
-
-| Time | On screen | Say |
-|------|-----------|-----|
-| 0:00 | Lumi intro | "Two telemetry worlds: a legacy ASP.NET API and a live PowerShell attack stream. One contract, one console." |
-| 0:15 | **Skip to dashboard** → Telemetry health | "Both sources are online. The UI never knows which system an event came from; the adapters emit `ThreatEvent` v1." |
-| 0:25 | Live feed ticking | "Every event is deduplicated and scored deterministically, so every score can be explained." |
-| 0:35 | **Inject → Critical** | "Here's a coordinated SQL-injection and privilege-escalation campaign…" |
-| 0:40 | Gauge turns **CRITICAL** | "…the landscape score reacts instantly, and it decays on its own, so one old spike can't keep the gauge red." |
-| 0:50 | **Intelligence → Executive brief** | "This is what the CISO reads: campaign, objective, recommended action, plus a playbook." |
-| 1:00 | **Contain** | "One click writes the stop flag and the PowerShell attacker actually halts. That's the full loop: C# and PowerShell into Python, out to the browser, and back to the attacker." |
-| 1:10 | Gauge decays, status **CONTAINED** | "Adding a new source means writing one adapter. Scoring, AI, and UI stay unchanged." |
-
----
-
-## 12. Resilience & graceful degradation
+## 11. Resilience & graceful degradation
 
 | Failure | Behavior |
 |---------|----------|
@@ -454,7 +438,7 @@ A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included
 
 ---
 
-## 13. Security considerations
+## 12. Security considerations
 
 - **No secrets in the repo.** `.env` is git-ignored; `.env.example` holds placeholders only.
 - **Validation at the boundary.** Every upstream payload passes through Pydantic (`raw_severity` is range-checked, types are coerced) before scoring.
@@ -466,7 +450,7 @@ A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included
 
 ---
 
-## 14. Key design decisions
+## 13. Key design decisions
 
 | Decision | Rationale |
 |----------|-----------|
@@ -483,7 +467,7 @@ A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included
 
 ---
 
-## 15. How AI tools were used ("The Vibe")
+## 14. How AI tools were used ("The Vibe")
 
 The challenge rewards **velocity over artisan loops**. The work was split deliberately:
 
@@ -499,7 +483,7 @@ The result is a demo that looks like a shipped product, with its architecture de
 
 ---
 
-## 16. Repository layout
+## 15. Repository layout
 
 ```
 frankenstein-threat-command-center/
@@ -543,7 +527,7 @@ frankenstein-threat-command-center/
 
 ---
 
-## 17. Troubleshooting
+## 16. Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
@@ -557,7 +541,7 @@ frankenstein-threat-command-center/
 
 ---
 
-## 18. Known limitations & next steps
+## 17. Known limitations & next steps
 
 **Limitations (scoped for a 24-hour demo)**
 - State lives in memory, so a bridge restart clears history (clients reconnect cleanly).
@@ -573,9 +557,5 @@ frankenstein-threat-command-center/
 - AuthN/Z on the control endpoints (`/api/contain`, `/api/demo/*`).
 
 ---
-
-## License
-
-MIT — see [LICENSE](LICENSE).
 
 **Author:** Saurabh Raj · [github.com/rajsaurabh1000](https://github.com/rajsaurabh1000)
