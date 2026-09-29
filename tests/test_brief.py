@@ -51,3 +51,24 @@ def test_same_level_is_still_throttled(monkeypatch):
     refresh(gen, events, ThreatLevel.HIGH, 70)
     assert "66/100" in gen.text  # unchanged: same posture, inside the throttle window
     assert gen.updated_at == stamp  # timestamp reflects generation, not "now"
+
+
+def test_containment_marker_is_not_listed_as_a_technique():
+    gen = BriefGenerator()
+    events = [scored("SQL Injection", 10, 100, ThreatLevel.CRITICAL)]
+    marker = ScoredEvent(
+        event=ThreatEvent(
+            event_id="evt-contain",
+            timestamp=datetime.now(timezone.utc),
+            source=TelemetrySource.SOC_CONSOLE,
+            attack_type="CONTAINMENT",
+            source_ip="SOC-CONSOLE",
+            status="Contained",
+            raw_severity=1,
+        ),
+        risk_score=0.0,
+        threat_level=ThreatLevel.HIGH,
+    )
+    asyncio.run(gen.force_refresh(events + [marker], ThreatLevel.HIGH, 62))
+    assert "CONTAINMENT" not in gen.text and "SOC-CONSOLE" not in gen.text
+    assert "SQL Injection" in gen.text

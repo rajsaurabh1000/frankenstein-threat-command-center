@@ -8,12 +8,17 @@ from datetime import datetime, timezone
 
 import httpx
 
-from models import AiInsights, ScoredEvent, ThreatLevel
+from models import AiInsights, ScoredEvent, TelemetrySource, ThreatLevel
 
 BRIEF_MIN_INTERVAL = 20.0
 # A posture change (e.g. HIGH -> CRITICAL) regenerates immediately, so the brief never quotes a
 # different level than the gauge; this floor only guards against flapping at a threshold.
 BRIEF_LEVEL_CHANGE_MIN_INTERVAL = 3.0
+
+
+def _threat_events(events: list[ScoredEvent]) -> list[ScoredEvent]:
+    """Telemetry only: the console's own actions (e.g. the CONTAINMENT marker) are not attack techniques."""
+    return [e for e in events if e.event.source is not TelemetrySource.SOC_CONSOLE]
 
 
 class BriefGenerator:
@@ -74,6 +79,7 @@ class BriefGenerator:
     async def maybe_refresh(
         self, events: list[ScoredEvent], global_level: ThreatLevel, global_score: float
     ) -> None:
+        events = _threat_events(events)
         if global_level is ThreatLevel.LOW and global_score < 35:
             self._cached_text = (
                 "Posture nominal. Legacy authentication and file-access logs show "
@@ -100,7 +106,7 @@ class BriefGenerator:
         self, events: list[ScoredEvent], global_level: ThreatLevel, global_score: float
     ) -> None:
         self._last_generated = 0.0
-        await self._refresh(events, global_level, global_score)
+        await self._refresh(_threat_events(events), global_level, global_score)
 
     async def _refresh(
         self, events: list[ScoredEvent], global_level: ThreatLevel, global_score: float
@@ -293,6 +299,7 @@ class BriefGenerator:
         global_level: ThreatLevel,
         global_score: float,
     ) -> tuple[str, str]:
+        events = _threat_events(events)
         cleaned = re.sub(r"\s+", " ", question.strip())
         if self._llm_enabled:
             context = self._minimal_context(events, global_level, global_score)

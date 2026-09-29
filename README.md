@@ -555,12 +555,12 @@ frankenstein-threat-command-center/
 
 ## 16. Tests
 
-A focused `pytest` suite (31 tests, under a second) covers the parts that carry the architecture:
+A focused `pytest` suite (32 tests, under a second) covers the parts that carry the architecture:
 
 | File | What it proves |
 |------|----------------|
 | [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape and a contained attack can't rebound after the window, a single noisy event stays LOW, a severity-9 hit flashes CRITICAL and falls back (but not once contained) |
-| [`tests/test_brief.py`](tests/test_brief.py) | A posture change regenerates the brief even inside the throttle window, so brief and gauge never disagree; `updated_at` is the real generation time |
+| [`tests/test_brief.py`](tests/test_brief.py) | A posture change regenerates the brief even inside the throttle window, so brief and gauge never disagree; `updated_at` is the real generation time; the console's own CONTAINMENT marker is never reported as an attack technique |
 | [`tests/test_dedup.py`](tests/test_dedup.py) | Deterministic, field-sensitive `event_id`s; a repeated observation is dropped; the cache is bounded |
 | [`tests/test_ingest.py`](tests/test_ingest.py) | JSON-lines, concatenated, and truncated log writes; PowerShell and ASP.NET payloads both map to `ThreatEvent` v1; severity clamping and defaults |
 | [`tests/test_api.py`](tests/test_api.py) | End to end through FastAPI: inject → real log-tail ingest → CRITICAL → contain writes the AttackSim stop flag; `/api/mitigate` alias; invalid scenarios rejected; template brief without an LLM |
