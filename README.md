@@ -105,6 +105,16 @@ docker compose up --build
 
 Built with AI-assisted scaffolding (Cursor) for velocity; scoring weights, WebSocket contract, and demo orchestration were tuned for a reliable live interview demo.
 
+## Publish to GitHub (submission)
+
+From the project root after `git commit`:
+
+```bash
+gh repo create frankenstein-threat-command-center --public --source=. --remote=origin --push
+```
+
+Reply to the tech challenge intro email with the public repository URL.
+
 ## License
 
 MIT
