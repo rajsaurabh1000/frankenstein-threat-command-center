@@ -202,6 +202,7 @@ createApp({
     const voiceError = ref("");
     const voiceEnabled = ref(true);
     let tourAdvanceLock = false;
+    let guideRun = 0;
     let introTourHandoff = false;
     const uiReady = ref(false);
     const displayedBrief = ref("");
@@ -1525,56 +1526,77 @@ createApp({
 
     function copilotIntroVoiceStep() {
       const c = copilotIntro.value;
-      const text = c.narration || c.text || copilotIntroProblemText();
+      const text =
+        c.voice ||
+        [copilotIntroProblemText(), c.narration].filter(Boolean).join(" ") ||
+        c.text ||
+        "";
       return { ...c, text };
     }
 
-    function skipCopilotIntro() {
-      showCopilotIntro.value = false;
+    /**
+     * Every intro / tour run owns a token. User actions start a new run; delayed continuations
+     * (auto-advance timers, step actions, audio callbacks) bail out when their run is stale, so an
+     * old tour chain can never talk over a replayed overview.
+     */
+    function newGuideRun() {
+      guideRun += 1;
+      tourAdvanceLock = false;
+      return guideRun;
+    }
+
+    function isGuideRun(run) {
+      return run === guideRun;
+    }
+
+    function haltVoice() {
+      stopNarration();
+      voiceSpeaking.value = false;
+      voiceLoading.value = false;
       introSpeaking.value = false;
       introLoading.value = false;
-      stopNarration();
     }
 
-    function onIntroVoiceComplete() {
-      if (voiceEnabled.value && tourSteps.value.length && !introTourHandoff) {
-        startDashboardTourFromIntro();
-      }
+    function skipCopilotIntro() {
+      newGuideRun();
+      showCopilotIntro.value = false;
+      haltVoice();
     }
 
-    async function speakCopilotIntro(afterIntro, options = {}) {
+    async function speakCopilotIntro(options = {}) {
       const chainTourOnEnd = options.chainTourOnEnd === true;
-      const fromStart = options.fromStart === true;
-      if (!copilotIntroVoiceStep().text) return;
-      const done =
-        afterIntro ??
-        (chainTourOnEnd ? onIntroVoiceComplete : () => {});
-      if (!fromStart) {
-        stopNarration();
-      }
+      const step = copilotIntroVoiceStep();
+      if (!step.text) return;
+      const run = newGuideRun();
+      haltVoice();
       if (!voiceEnabled.value) {
         introVoiceHint.value =
           "Voice is off — enable narration below, then use Replay overview or Start feature walkthrough.";
         return;
       }
       introLoading.value = true;
+      introVoiceHint.value = "";
       voiceError.value = "";
-      await unlockNarrationAudio();
-      const played = await playNarration(
-        copilotIntroVoiceStep(),
+      await playNarration(
+        step,
         {
           onStart: () => {
+            if (!isGuideRun(run)) return;
             introLoading.value = false;
             introSpeaking.value = true;
             introAutoplayBlocked.value = false;
             introVoiceHint.value = "";
           },
           onEnd: () => {
+            if (!isGuideRun(run)) return;
             introSpeaking.value = false;
             introLoading.value = false;
-            done();
+            if (chainTourOnEnd && voiceEnabled.value && showCopilotIntro.value && tourSteps.value.length) {
+              startDashboardTourFromIntro();
+            }
           },
           onError: (err) => {
+            if (!isGuideRun(run)) return;
             introLoading.value = false;
             introSpeaking.value = false;
             introAutoplayBlocked.value = true;
@@ -1589,25 +1611,26 @@ createApp({
             }
           },
         },
-        { fromStart }
+        { fromStart: true }
       );
-      if (!played && !introSpeaking.value) {
+      if (isGuideRun(run) && !introSpeaking.value) {
         introLoading.value = false;
       }
     }
 
+    /** Play / Replay overview: stop everything (including a running tour) and restart the clip from 0:00. */
     async function replayCopilotIntro() {
       if (lumiGuideActive.value) {
         endLumiTour();
       }
       introTourHandoff = false;
       tourAutoPlay.value = false;
-      const chainAfter =
-        voiceEnabled.value && tourSteps.value.length && introAutoplayBlocked.value;
-      await speakCopilotIntro(undefined, { chainTourOnEnd: chainAfter, fromStart: true });
+      await speakCopilotIntro({ chainTourOnEnd: true });
     }
 
     async function openCopilotIntroFlow() {
+      newGuideRun();
+      haltVoice();
       introTourHandoff = false;
       tourAutoPlay.value = false;
       if (!copilotIntroProblemText()) await loadCopilotIntro();
@@ -1625,7 +1648,7 @@ createApp({
       introTourHandoff = true;
       introAutoplayBlocked.value = false;
       introVoiceHint.value = "";
-      await unlockNarrationAudio();
+      unlockNarrationAudio(); // use the click gesture before the tour's awaits
       skipCopilotIntro();
       await beginLumiDashboardTour();
     }
@@ -1647,8 +1670,8 @@ createApp({
       }
     }
 
-    async function navigateToTourStep(step) {
-      if (!step) return;
+    async function navigateToTourStep(step, run = guideRun) {
+      if (!step || !isGuideRun(run)) return;
       const highlight = step.highlight || SECTION_TARGETS[step.tab] || null;
       if (step.tab) {
         activeTab.value = step.tab;
@@ -1659,129 +1682,150 @@ createApp({
         copilotOpen.value = false;
       }
       await nextTick();
+      if (!isGuideRun(run)) return;
       tourHighlightId.value = highlight;
       await executeTourStepAction(step);
+      if (!isGuideRun(run)) return;
       if (step.tab) {
         activeTab.value = step.tab;
       }
       await nextTick();
+      if (!isGuideRun(run)) return;
       tourHighlightId.value = highlight;
       requestAnimationFrame(() => scrollTourTarget(highlight));
     }
 
     function endLumiTour() {
+      newGuideRun();
       lumiGuideActive.value = false;
       tourAutoPlay.value = false;
       tourHighlightId.value = null;
       copilotOpen.value = false;
-      stopNarration();
+      haltVoice();
     }
 
-    async function advanceTourAuto() {
-      if (tourAdvanceLock || !lumiGuideActive.value || !tourAutoPlay.value) return;
+    async function advanceTourAuto(run) {
+      if (tourAdvanceLock || !isGuideRun(run) || !lumiGuideActive.value || !tourAutoPlay.value) return;
       if (tourIndex.value >= tourSteps.value.length - 1) {
         endLumiTour();
         return;
       }
       tourAdvanceLock = true;
       await new Promise((r) => setTimeout(r, 700));
+      if (!isGuideRun(run) || !lumiGuideActive.value || !tourAutoPlay.value) return;
       tourIndex.value += 1;
-      await navigateToTourStep(currentTourStep.value);
+      await navigateToTourStep(currentTourStep.value, run);
+      if (!isGuideRun(run)) return;
       const upcoming = tourSteps.value[tourIndex.value + 1];
       if (upcoming) prefetchNarration(upcoming);
       tourAdvanceLock = false;
-      await speakCurrentTour(null, { autoChain: true });
+      await speakCurrentTour(run);
     }
 
     async function beginLumiDashboardTour() {
+      const run = newGuideRun();
+      haltVoice();
       showCopilotIntro.value = false;
       lumiGuideActive.value = true;
       tourAutoPlay.value = true;
       tourIndex.value = 0;
       voiceError.value = "";
       if (!tourSteps.value.length) await loadTour();
-      await navigateToTourStep(currentTourStep.value);
-      await speakCurrentTour(null, { autoChain: true });
+      if (!isGuideRun(run)) return;
+      await navigateToTourStep(currentTourStep.value, run);
+      if (!isGuideRun(run)) return;
+      await speakCurrentTour(run);
     }
 
     function pauseLumiTour() {
+      newGuideRun();
       tourAutoPlay.value = false;
-      stopNarration();
+      haltVoice();
     }
 
     async function resumeLumiTour() {
       if (!lumiGuideActive.value) return;
+      const run = newGuideRun();
+      haltVoice();
       tourAutoPlay.value = true;
-      await speakCurrentTour(null, { autoChain: true });
+      await speakCurrentTour(run);
     }
 
-    async function skipLumiTourStep() {
-      stopNarration();
-      if (tourIndex.value >= tourSteps.value.length - 1) {
+    async function stepLumiTour(delta) {
+      const run = newGuideRun();
+      haltVoice();
+      const next = tourIndex.value + delta;
+      if (next < 0) return;
+      if (next > tourSteps.value.length - 1) {
         endLumiTour();
         return;
       }
-      tourIndex.value += 1;
-      await navigateToTourStep(currentTourStep.value);
-      if (tourAutoPlay.value) {
-        await speakCurrentTour(null, { autoChain: true });
+      tourIndex.value = next;
+      await navigateToTourStep(currentTourStep.value, run);
+      if (isGuideRun(run) && tourAutoPlay.value) {
+        await speakCurrentTour(run);
       }
     }
 
-    async function prevLumiTourStep() {
-      stopNarration();
-      if (tourIndex.value <= 0) return;
-      tourIndex.value -= 1;
-      await navigateToTourStep(currentTourStep.value);
-      if (tourAutoPlay.value) {
-        await speakCurrentTour(null, { autoChain: true });
-      }
+    function skipLumiTourStep() {
+      return stepLumiTour(1);
+    }
+
+    function prevLumiTourStep() {
+      return stepLumiTour(-1);
     }
 
     async function enableGuideVoiceAndContinue() {
       voiceEnabled.value = true;
       voiceError.value = "";
-      await unlockNarrationAudio();
+      const run = newGuideRun();
+      haltVoice();
       tourAutoPlay.value = true;
-      await speakCurrentTour(null, { autoChain: true });
+      await speakCurrentTour(run);
     }
 
-    async function speakCurrentTour(callbackAfter, options = {}) {
-      const { autoChain = false } = options;
+    /** Voice checkbox: turning it off stops audio; a running tour keeps advancing silently. */
+    function onVoiceToggle() {
+      if (voiceEnabled.value) return;
+      const run = newGuideRun();
+      haltVoice();
+      if (lumiGuideActive.value && tourAutoPlay.value) {
+        speakCurrentTour(run);
+      }
+    }
+
+    async function speakCurrentTour(run) {
+      const chain = (delayMs = 0) => {
+        setTimeout(() => {
+          if (isGuideRun(run) && lumiGuideActive.value && tourAutoPlay.value) advanceTourAuto(run);
+        }, delayMs);
+      };
+      if (!isGuideRun(run)) return;
       if (!voiceEnabled.value) {
         voiceError.value = "Voice off — enable voice or use Next to step through.";
-        if (autoChain && lumiGuideActive.value && tourAutoPlay.value) {
-          setTimeout(() => {
-            advanceTourAuto().finally(() => callbackAfter?.());
-          }, 5500);
-        } else {
-          callbackAfter?.();
-        }
+        chain(5500);
         return;
       }
       if (!currentTourStep.value) {
         voiceError.value = "No tour step loaded — click Voice tour again or restart ./scripts/start-demo.sh";
-        callbackAfter?.();
         return;
       }
       voiceLoading.value = true;
       voiceError.value = "";
-      await unlockNarrationAudio();
       await playNarration(currentTourStep.value, {
         onStart: () => {
+          if (!isGuideRun(run)) return;
           voiceLoading.value = false;
           voiceSpeaking.value = true;
         },
         onEnd: () => {
+          if (!isGuideRun(run)) return;
           voiceSpeaking.value = false;
           voiceLoading.value = false;
-          if (autoChain && lumiGuideActive.value && tourAutoPlay.value) {
-            advanceTourAuto().finally(() => callbackAfter?.());
-          } else {
-            callbackAfter?.();
-          }
+          chain();
         },
         onError: (err) => {
+          if (!isGuideRun(run)) return;
           voiceLoading.value = false;
           voiceSpeaking.value = false;
           const msg = err?.message || "";
@@ -1792,19 +1836,15 @@ createApp({
             voiceError.value =
               "Voice unavailable — hard refresh (Cmd+Shift+R). If it persists, run ./scripts/generate-narration.sh and restart ./scripts/start-demo.sh.";
           }
-          if (autoChain && lumiGuideActive.value && tourAutoPlay.value) {
-            setTimeout(() => {
-              advanceTourAuto().finally(() => callbackAfter?.());
-            }, 4500);
-          } else {
-            callbackAfter?.();
-          }
+          chain(4500);
         },
       });
+      if (isGuideRun(run) && !voiceSpeaking.value && voiceLoading.value) {
+        voiceLoading.value = false;
+      }
     }
 
     async function openVoiceTour() {
-      stopNarration();
       endLumiTour();
       tourIndex.value = 0;
       await openCopilotIntroFlow();
@@ -1949,6 +1989,7 @@ createApp({
       startDashboardTourFromIntro,
       speakCopilotIntro,
       replayCopilotIntro,
+      onVoiceToggle,
       tourSteps,
       tourIndex,
       currentTourStep,
@@ -2027,7 +2068,7 @@ createApp({
                       ? 'Loading voice…'
                       : introAutoplayBlocked
                         ? 'Click Play overview to start voice'
-                        : 'Voice overview (auto-starts when the browser allows)'
+                        : 'Voice overview ready — Replay overview restarts from the beginning'
                 }}
               </span>
             </div>
@@ -2066,7 +2107,7 @@ createApp({
           <button type="button" class="copilot-intro-btn ghost" @click="skipCopilotIntro">Skip to dashboard</button>
         </div>
         <label class="copilot-intro-voice">
-          <input type="checkbox" v-model="voiceEnabled" @change="voiceEnabled || stopNarration()" />
+          <input type="checkbox" v-model="voiceEnabled" @change="onVoiceToggle" />
           Voice narration (continues into product walkthrough when overview finishes)
         </label>
       </div>
@@ -2628,7 +2669,7 @@ createApp({
           </button>
         </div>
         <label class="copilot-guide-voice-toggle">
-          <input type="checkbox" v-model="voiceEnabled" @change="voiceEnabled || stopNarration()" />
+          <input type="checkbox" v-model="voiceEnabled" @change="onVoiceToggle" />
           Auto-advance with voice narration
         </label>
       </div>

@@ -81,55 +81,83 @@ export function stopNarration() {
   }
 }
 
-function playUrl(url, callbacks, requestId) {
-  stopAudio();
-  const audio = new Audio(url);
-  audio.preload = "auto";
-  activeAudio = audio;
-  audio.onplay = () => {
-    if (requestId === activeRequest && callbacks.onStart) callbacks.onStart();
-  };
-  audio.onended = () => {
-    if (requestId !== activeRequest) return;
-    activeAudio = null;
-    if (callbacks.onEnd) callbacks.onEnd();
-  };
-  audio.onerror = () => {
-    if (requestId !== activeRequest) return;
-    activeAudio = null;
-    if (callbacks.onError) callbacks.onError(new Error("Audio playback failed"));
-  };
-  const p = audio.play();
-  if (p?.catch) {
-    p.catch((err) => {
-      if (requestId !== activeRequest) return;
+/**
+ * Start `url` from 0:00 on a fresh element. Resolves { ok, error } once play() settles;
+ * a superseded request resolves { ok: false, superseded: true } so callers never hang.
+ * onStart fires once real playback begins; errors after that go to callbacks.onError.
+ */
+function startAudio(url, callbacks, requestId) {
+  return new Promise((resolve) => {
+    stopAudio();
+    const audio = new Audio(url);
+    audio.preload = "auto";
+    activeAudio = audio;
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    const current = () => requestId === activeRequest && activeAudio === audio;
+    audio.onended = () => {
+      if (!current()) return;
       activeAudio = null;
-      if (callbacks.onError) callbacks.onError(err);
-    });
-  }
+      callbacks.onEnd?.();
+    };
+    audio.onerror = () => {
+      if (!current()) {
+        finish({ ok: false, superseded: true });
+        return;
+      }
+      activeAudio = null;
+      const error = new Error("Audio playback failed");
+      if (settled) {
+        callbacks.onError?.(error);
+      } else {
+        finish({ ok: false, error });
+      }
+    };
+    const attempt = audio.play();
+    if (!attempt || typeof attempt.then !== "function") {
+      callbacks.onStart?.();
+      finish({ ok: true });
+      return;
+    }
+    attempt
+      .then(() => {
+        if (!current()) {
+          finish({ ok: false, superseded: true });
+          return;
+        }
+        callbacks.onStart?.();
+        finish({ ok: true });
+      })
+      .catch((error) => {
+        if (current()) activeAudio = null;
+        finish({ ok: false, error, superseded: requestId !== activeRequest });
+      });
+  });
 }
 
 async function resolveStaticUrl({ text, stepId, audioFile }) {
   if (audioFile) {
     return `/static/assets/narration/${audioFile}`;
   }
-  if (stepId) {
-    const index = await loadStaticIndex();
-    const meta = index?.steps?.[stepId];
-    if (meta?.file) {
-      return `/static/assets/narration/${meta.file}`;
-    }
-  }
   const digest = await textDigest(text);
-  const direct = `/static/assets/narration/narr_${digest}.mp3`;
   const index = await loadStaticIndex();
   const steps = index?.steps || {};
+  // A step-id match only counts if the clip was generated from this exact text — otherwise an
+  // outdated clip plays after the script changes.
+  const byId = stepId ? steps[stepId] : null;
+  if (byId?.file && byId.digest === digest) {
+    return `/static/assets/narration/${byId.file}`;
+  }
   for (const meta of Object.values(steps)) {
     if (meta.digest === digest && meta.file) {
       return `/static/assets/narration/${meta.file}`;
     }
   }
-  return direct;
+  return `/static/assets/narration/narr_${digest}.mp3`;
 }
 
 async function fetchLiveMp3(text) {
@@ -222,33 +250,26 @@ export async function playNarration(textOrStep, callbacks = {}, options = {}) {
     stopNarration();
   }
 
-  await unlockNarrationAudio();
-
+  // Claim the request before any await so the most recent call always wins.
   const requestId = activeRequest + 1;
   activeRequest = requestId;
 
+  await unlockNarrationAudio();
+  if (requestId !== activeRequest) return false;
+
   try {
-    let staticUrl = await resolveStaticUrl({
+    const staticUrl = await resolveStaticUrl({
       text: key,
       stepId: step.id,
       audioFile: step.audioFile,
     });
     if (requestId !== activeRequest) return false;
-    if (fromStart && staticUrl) {
-      const sep = staticUrl.includes("?") ? "&" : "?";
-      staticUrl = `${staticUrl}${sep}t=${Date.now()}`;
-    }
 
-    let staticPlayError = null;
-    const staticOk = await tryPlayStaticUrl(staticUrl, {
-      ...callbacks,
-      onError: (err) => {
-        staticPlayError = err;
-      },
-    }, requestId);
-    if (staticOk) return true;
-    if (staticPlayError && isAutoplayBlocked(staticPlayError)) {
-      callbacks.onError?.(staticPlayError);
+    const result = await startAudio(staticUrl, callbacks, requestId);
+    if (result.ok) return true;
+    if (result.superseded || requestId !== activeRequest) return false;
+    if (result.error && isAutoplayBlocked(result.error)) {
+      callbacks.onError?.(result.error);
       return false;
     }
   } catch {
@@ -258,8 +279,13 @@ export async function playNarration(textOrStep, callbacks = {}, options = {}) {
   try {
     const blobUrl = await fetchLiveMp3(key);
     if (requestId !== activeRequest) return false;
-    playUrl(blobUrl, callbacks, requestId);
-    return true;
+    const result = await startAudio(blobUrl, callbacks, requestId);
+    if (result.ok) return true;
+    if (result.superseded || requestId !== activeRequest) return false;
+    if (result.error && isAutoplayBlocked(result.error)) {
+      callbacks.onError?.(result.error);
+      return false;
+    }
   } catch {
     /* fall through */
   }
@@ -279,54 +305,6 @@ function isAutoplayBlocked(err) {
     name === "NotAllowedError" ||
     /notallowed|autoplay|user didn't interact|gesture/i.test(msg)
   );
-}
-
-/** Play pre-generated MP3 from /static/assets/narration (no canplaythrough probe — flaky in Chrome). */
-function tryPlayStaticUrl(url, callbacks, requestId) {
-  return new Promise((resolve) => {
-    stopAudio();
-    const audio = new Audio(url);
-    audio.preload = "auto";
-    audio.currentTime = 0;
-    let settled = false;
-    const finish = (ok) => {
-      if (settled) return;
-      settled = true;
-      resolve(ok);
-    };
-    audio.onplay = () => {
-      if (requestId === activeRequest && callbacks.onStart) callbacks.onStart();
-    };
-    audio.onended = () => {
-      if (requestId !== activeRequest) return;
-      activeAudio = null;
-      if (callbacks.onEnd) callbacks.onEnd();
-    };
-    audio.onerror = () => {
-      if (requestId !== activeRequest) return;
-      activeAudio = null;
-      finish(false);
-    };
-    activeAudio = audio;
-    const attempt = audio.play();
-    if (attempt && typeof attempt.then === "function") {
-      attempt
-        .then(() => {
-          if (requestId === activeRequest && callbacks.onStart) {
-            callbacks.onStart();
-          }
-          finish(true);
-        })
-        .catch((err) => {
-          if (requestId !== activeRequest) return;
-          activeAudio = null;
-          callbacks.onError?.(err);
-          finish(false);
-        });
-    } else {
-      finish(true);
-    }
-  });
 }
 
 async function loadFallbackTour() {

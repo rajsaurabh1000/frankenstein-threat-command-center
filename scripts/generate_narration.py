@@ -23,7 +23,7 @@ def main() -> None:
     index: dict = {}
 
     def write_step(step: dict) -> None:
-        raw = step.get("narration") or step.get("text") or ""
+        raw = step.get("voice") or step.get("narration") or step.get("text") or ""
         text = normalize_text(raw)
         if not text:
             return

@@ -338,8 +338,10 @@ The brief asked for **one** jaw-drop feature. This build covers all three sugges
 
 ### 🤖 Lumi — AI Copilot guide with voice
 - On load, an intro modal presents the problem statement, how it's solved, and the reference architecture diagram.
-- **Play overview** starts neural-voice narration. **Start walkthrough** runs about 20 spotlighted tour steps across the console. The copilot can then run the operational flow itself: inject a campaign, refresh the brief, and initiate containment.
-- The voice clips are **pre-generated and committed** (`dashboard/assets/narration/`), so narration works offline. Changed scripts are generated live via `edge-tts` and cached.
+- **Play overview** narrates the full overview (problem statement, then approach) from 0:00. Nothing auto-plays on page load, so browser autoplay rules never cut in mid-sentence. **Replay overview** stops everything, including a running tour, and restarts from the beginning.
+- **Start walkthrough** runs about 20 spotlighted tour steps across the console, and the copilot then runs the operational flow itself: inject a campaign, refresh the brief, and initiate containment. The guide bar offers **Pause** / **Read aloud** / **Back** / **Next highlight**.
+- Each intro or tour run carries a token, so delayed continuations (auto-advance timers, step actions, audio callbacks) from an abandoned run can never talk over a newer one.
+- The voice clips are **pre-generated and committed** (`dashboard/assets/narration/`), so narration works offline. A clip is only used if its digest matches the current script text. Otherwise the bridge generates it live via `edge-tts` and caches it, so an edited script never plays a stale clip.
 
 ### 💬 Ask Lumi — executive Q&A
 - A CISO can type a free-form question ("Should we isolate the web tier?") and get a 2–3 sentence answer grounded **only** in current telemetry. It uses the LLM when one is configured and a template otherwise.

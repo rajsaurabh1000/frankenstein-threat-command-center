@@ -19,6 +19,8 @@ COPILOT_INTRO = {
         "Next I will cover each product surface, then run a critical campaign inject through contain end to end."
     ),
 }
+# Spoken overview = problem statement followed by the approach, so the voice starts at the beginning.
+COPILOT_INTRO["voice"] = f"{COPILOT_INTRO['problem']} {COPILOT_INTRO['narration']}"
 
 NARRATION_TOUR = [
     {
