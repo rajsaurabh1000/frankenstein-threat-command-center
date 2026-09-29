@@ -431,9 +431,9 @@ async def index() -> FileResponse:
 
 @app.get("/favicon.ico", include_in_schema=False, response_model=None)
 async def favicon():
-    svg_path = DASHBOARD_DIR / "assets" / "favicon.svg"
-    if svg_path.is_file():
-        return FileResponse(svg_path, media_type="image/svg+xml")
+    icon_path = DASHBOARD_DIR / "assets" / "favicon.png"
+    if icon_path.is_file():
+        return FileResponse(icon_path, media_type="image/png")
     return Response(status_code=404)
 
 
