@@ -1,5 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://127.0.0.1:5080");
+// Loopback by default; `--urls` / ASPNETCORE_URLS override it (Docker binds 0.0.0.0).
+builder.WebHost.UseUrls(builder.Configuration["urls"] ?? "http://127.0.0.1:5080");
 
 builder.Services.AddCors(options =>
 {

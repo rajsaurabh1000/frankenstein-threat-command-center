@@ -26,8 +26,9 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 13. [Key design decisions](#13-key-design-decisions)
 14. [How AI tools were used ("The Vibe")](#14-how-ai-tools-were-used-the-vibe)
 15. [Repository layout](#15-repository-layout)
-16. [Troubleshooting](#16-troubleshooting)
-17. [Known limitations & next steps](#17-known-limitations--next-steps)
+16. [Tests](#16-tests)
+17. [Troubleshooting](#17-troubleshooting)
+18. [Known limitations & next steps](#18-known-limitations--next-steps)
 
 ---
 
@@ -148,6 +149,10 @@ flowchart LR
   stop -.->|checked every loop| chaos
   ui -->|POST /api/demo/scenario| log
 ```
+
+The same topology as it ships inside the product (Lumi's intro modal renders this diagram):
+
+![Reference architecture — sources, analytics bridge, command center, response loop](dashboard/assets/architecture-tcc.svg)
 
 ### End-to-end data flow
 
@@ -419,7 +424,7 @@ pwsh -File chaos/AttackSim.ps1
 
 ### Docker Compose (optional)
 
-A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included. The **verified** path is `./scripts/start-demo.sh`. Note that `Program.cs` binds to `127.0.0.1`, so for container-to-container networking the legacy service may need that bind changed to `0.0.0.0`.
+A `docker-compose.yml` with `legacy`, `bridge`, and `chaos` services is included (`docker compose up`, then open http://127.0.0.1:8000). The legacy API binds to loopback by default and honors `--urls` / `ASPNETCORE_URLS`, which Compose uses to bind `0.0.0.0`. `./scripts/start-demo.sh` remains the primary, end-to-end-tested path.
 
 ---
 
@@ -514,6 +519,7 @@ frankenstein-threat-command-center/
 │   ├── *.css                #   themes, layout, motion
 │   ├── vendor/vue.esm-browser.js
 │   └── assets/              #   logos, architecture SVG, Lumi, pre-generated narration MP3s
+├── tests/                   # pytest: scorer, dedup, adapters, API end to end
 ├── scripts/
 │   ├── start-demo.sh        # one-command local demo
 │   ├── generate-narration.sh
@@ -527,7 +533,28 @@ frankenstein-threat-command-center/
 
 ---
 
-## 16. Troubleshooting
+## 16. Tests
+
+A focused `pytest` suite (25 tests, under a second) covers the parts that carry the architecture:
+
+| File | What it proves |
+|------|----------------|
+| [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape |
+| [`tests/test_dedup.py`](tests/test_dedup.py) | Deterministic, field-sensitive `event_id`s; a repeated observation is dropped; the cache is bounded |
+| [`tests/test_ingest.py`](tests/test_ingest.py) | JSON-lines, concatenated, and truncated log writes; PowerShell and ASP.NET payloads both map to `ThreatEvent` v1; severity clamping and defaults |
+| [`tests/test_api.py`](tests/test_api.py) | End to end through FastAPI: inject → real log-tail ingest → CRITICAL → contain writes the AttackSim stop flag; `/api/mitigate` alias; invalid scenarios rejected; template brief without an LLM |
+
+```bash
+python3 -m venv .venv-test
+.venv-test/bin/pip install -r bridge/requirements.txt -r bridge/requirements-dev.txt
+.venv-test/bin/python -m pytest -q
+```
+
+Tests run against a temporary `DATA_DIR` with the LLM disabled, so they never touch your demo data or call an external API.
+
+---
+
+## 17. Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
@@ -541,19 +568,19 @@ frankenstein-threat-command-center/
 
 ---
 
-## 17. Known limitations & next steps
+## 18. Known limitations & next steps
 
 **Limitations (scoped for a 24-hour demo)**
 - State lives in memory, so a bridge restart clears history (clients reconnect cleanly).
 - Containment is a local stop flag, not a real enforcement action.
 - Live-stream `time` is `HH:mm:ss` only, so the bridge assumes "today, UTC".
-- No automated test suite; verification was done end to end via the API and the UI.
+- Tests cover the bridge (scoring, dedup, adapters, API). The Vue UI is verified by hand in the browser, with no automated UI tests.
 
 **Next steps toward production**
 - Persist events to a time-series store and replay on restart.
 - Replace the stop flag with a real response integration.
 - Add any technique mapping to `ThreatEvent` and geo-IP enrichment for a 3D attack map.
-- Contract tests for each adapter, plus property tests for the scorer.
+- Property-based tests for the scorer, a WebSocket message-contract test, and Playwright smoke tests for the UI.
 - AuthN/Z on the control endpoints (`/api/contain`, `/api/demo/*`).
 
 ---

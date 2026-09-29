@@ -12,3 +12,5 @@ legacy/obj/
 .DS_Store
 dashboard/dist/
 local-docs/
+.venv-test/
+.pytest_cache/
