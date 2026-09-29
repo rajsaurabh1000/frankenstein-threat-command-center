@@ -528,6 +528,7 @@ body.tcc-ready {
 }
 
 .copilot-fab--lumi {
+  bottom: 0.5rem;
   width: auto;
   height: auto;
   padding: 0;
