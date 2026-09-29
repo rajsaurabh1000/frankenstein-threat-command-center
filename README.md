@@ -7,6 +7,11 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 
 [![CI](https://github.com/rajsaurabh1000/frankenstein-threat-command-center/actions/workflows/ci.yml/badge.svg)](https://github.com/rajsaurabh1000/frankenstein-threat-command-center/actions/workflows/ci.yml)
 
+## 🚀 [Open the live Threat Command Center →](https://frankenstein-threat-command-center.onrender.com)
+
+> Interactive and real time, with no installation. All three components (ASP.NET, Python, PowerShell) run in one container on Render's free tier.
+> The first visit after a quiet period can take about a minute while the instance wakes up. On the public URL the AI runs in template mode, and a contained demo automatically resumes after 90 s.
+
 ![Threat Command Center — critical posture](docs/screenshots/command-center-critical.png)
 
 ---
