@@ -551,8 +551,8 @@ frankenstein-threat-command-center/
 
 **Next steps toward production**
 - Persist events to a time-series store and replay on restart.
-- Replace the stop flag with a real response integration (PAN-OS dynamic address groups / Cortex XSOAR playbook).
-- Add MITRE ATT&CK technique mapping to `ThreatEvent` and geo-IP enrichment for a 3D attack map.
+- Replace the stop flag with a real response integration.
+- Add any technique mapping to `ThreatEvent` and geo-IP enrichment for a 3D attack map.
 - Contract tests for each adapter, plus property tests for the scorer.
 - AuthN/Z on the control endpoints (`/api/contain`, `/api/demo/*`).
 
