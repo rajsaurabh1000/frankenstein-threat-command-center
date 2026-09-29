@@ -11,6 +11,9 @@ import httpx
 from models import AiInsights, ScoredEvent, ThreatLevel
 
 BRIEF_MIN_INTERVAL = 20.0
+# A posture change (e.g. HIGH -> CRITICAL) regenerates immediately, so the brief never quotes a
+# different level than the gauge; this floor only guards against flapping at a threshold.
+BRIEF_LEVEL_CHANGE_MIN_INTERVAL = 3.0
 
 
 class BriefGenerator:
@@ -33,6 +36,8 @@ class BriefGenerator:
             llm_active=False,
         )
         self._last_generated = 0.0
+        self._generated_at = datetime.now(timezone.utc)
+        self._brief_level: ThreatLevel | None = None
         self._api_key = os.environ.get("OPENAI_API_KEY", "").strip()
         self._model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
         enabled = os.environ.get("LLM_BRIEF_ENABLED", "true").lower()
@@ -64,7 +69,7 @@ class BriefGenerator:
 
     @property
     def updated_at(self) -> datetime:
-        return datetime.now(timezone.utc)
+        return self._generated_at
 
     async def maybe_refresh(
         self, events: list[ScoredEvent], global_level: ThreatLevel, global_score: float
@@ -78,10 +83,15 @@ class BriefGenerator:
             self._cached_insights = self._template_insights(
                 events, global_level, global_score
             )
+            if self._brief_level is not ThreatLevel.LOW:
+                self._generated_at = datetime.now(timezone.utc)
+            self._brief_level = ThreatLevel.LOW
             return
 
-        now = time.time()
-        if now - self._last_generated < BRIEF_MIN_INTERVAL:
+        elapsed = time.time() - self._last_generated
+        level_changed = global_level is not self._brief_level
+        min_interval = BRIEF_LEVEL_CHANGE_MIN_INTERVAL if level_changed else BRIEF_MIN_INTERVAL
+        if elapsed < min_interval:
             return
 
         await self._refresh(events, global_level, global_score)
@@ -96,6 +106,8 @@ class BriefGenerator:
         self, events: list[ScoredEvent], global_level: ThreatLevel, global_score: float
     ) -> None:
         self._last_generated = time.time()
+        self._generated_at = datetime.now(timezone.utc)
+        self._brief_level = global_level
         self._cached_insights = self._template_insights(
             events, global_level, global_score
         )

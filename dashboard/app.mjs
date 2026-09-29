@@ -740,7 +740,8 @@ createApp({
       briefMode.value = brief.mode ?? briefMode.value;
       if (brief.updated_at) {
         try {
-          briefUpdatedAt.value = new Date(brief.updated_at).toLocaleString();
+          const iso = new Date(brief.updated_at).toISOString(); // UTC, matching the header clock
+          briefUpdatedAt.value = `${iso.slice(11, 19)}Z · ${iso.slice(0, 10)}`;
         } catch {
           briefUpdatedAt.value = "";
         }

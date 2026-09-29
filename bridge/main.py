@@ -187,7 +187,19 @@ async def background_ingest() -> None:
             await broadcast_health()
             await asyncio.sleep(5.0)
 
-    await asyncio.gather(legacy_wrapper(), tail_loop(), health_loop())
+    async def posture_loop() -> None:
+        """The landscape decays between events (e.g. after containment); keep gauge and brief in step."""
+        while not _stop_background:
+            await asyncio.sleep(2.0)
+            stamp = brief_gen.updated_at
+            await brief_gen.maybe_refresh(
+                list(recent_scored), scorer.global_threat_level(), scorer.global_score
+            )
+            if brief_gen.updated_at != stamp:
+                await broadcast_brief()
+            await broadcast_state()
+
+    await asyncio.gather(legacy_wrapper(), tail_loop(), health_loop(), posture_loop())
 
 
 @app.on_event("startup")

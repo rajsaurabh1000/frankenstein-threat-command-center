@@ -317,7 +317,7 @@ One critical hit from ten minutes ago should **not** pin the gauge red forever. 
 | Diversity bonus | `+3` per unique technique, max `+12` |
 | Frequency bonus | `+1.5` per event in the last 60 s, max `+12` |
 | Peak floor | if any event in the last 30 s has risk ≥ 85, score ≥ `0.85 × peak` |
-| Containment | after **Contain**, score decays linearly to ~0 over 12 s, then floors at ≤ 18 and bleeds off |
+| Containment | events observed before **Contain** fade out linearly over 12 s and then stop counting, so the gauge can't rebound to CRITICAL from an attack that was already contained. New activity after Contain (e.g. a fresh inject) counts normally |
 
 **Gauge level:** `CRITICAL` ≥ 78 · `HIGH` ≥ 58 · `ELEVATED` ≥ 35 · `LOW` < 35.
 
@@ -333,7 +333,7 @@ The brief asked for **one** jaw-drop feature. This build covers all three sugges
 - A 3–4 sentence CISO-grade summary of the current campaign, plus a named **playbook** with three recommendations and a confidence score.
 - **With `OPENAI_API_KEY`:** the brief comes from `gpt-4o-mini` (configurable). The model sees a **minimized** context of only the last 12 events, reduced to `attack|ip|severity|risk|level`, with no raw payloads.
 - **Without a key:** a deterministic template produces the same structure from the same data, so the demo never breaks on Wi-Fi or quota issues.
-- Refreshes automatically on landscape changes (throttled to one every 20 s) and on demand with **Refresh Brief**.
+- Always quotes the same posture as the gauge. A level change (e.g. HIGH → CRITICAL, or decay after Contain) regenerates it immediately. Otherwise refreshes are throttled to one every 20 s, and **Refresh Brief** forces one on demand.
 
 ### 🛑 Contain (the "Mitigate button that stops the PowerShell script")
 - `POST /api/contain` writes `data/.attack_stop`. AttackSim checks for the file on every iteration and **exits**.
@@ -535,11 +535,12 @@ frankenstein-threat-command-center/
 
 ## 16. Tests
 
-A focused `pytest` suite (25 tests, under a second) covers the parts that carry the architecture:
+A focused `pytest` suite (28 tests, under a second) covers the parts that carry the architecture:
 
 | File | What it proves |
 |------|----------------|
-| [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape |
+| [`tests/test_scorer.py`](tests/test_scorer.py) | Attack weights × severity, the +15 Failed/Denied/Blocked bump and cap, event-level thresholds, one critical hit flips the gauge CRITICAL, low noise stays LOW, containment decays the landscape and a contained attack can't rebound after the window |
+| [`tests/test_brief.py`](tests/test_brief.py) | A posture change regenerates the brief even inside the throttle window, so brief and gauge never disagree; `updated_at` is the real generation time |
 | [`tests/test_dedup.py`](tests/test_dedup.py) | Deterministic, field-sensitive `event_id`s; a repeated observation is dropped; the cache is bounded |
 | [`tests/test_ingest.py`](tests/test_ingest.py) | JSON-lines, concatenated, and truncated log writes; PowerShell and ASP.NET payloads both map to `ThreatEvent` v1; severity clamping and defaults |
 | [`tests/test_api.py`](tests/test_api.py) | End to end through FastAPI: inject → real log-tail ingest → CRITICAL → contain writes the AttackSim stop flag; `/api/mitigate` alias; invalid scenarios rejected; template brief without an LLM |

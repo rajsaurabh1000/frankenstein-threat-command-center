@@ -65,3 +65,21 @@ def test_containment_decays_landscape():
     before = scorer.global_score
     scorer.apply_containment(12.0)
     assert scorer.global_score < before
+
+
+def test_contained_attack_does_not_rebound_after_window(monkeypatch):
+    import scorer as scorer_module
+
+    clock = [1000.0]
+    monkeypatch.setattr(scorer_module.time, "time", lambda: clock[0])
+    scorer = ThreatScorer()
+    for _ in range(3):
+        scorer.score_event(make_event("SQL Injection", 10))
+    assert scorer.global_threat_level() is ThreatLevel.CRITICAL
+
+    scorer.apply_containment(12.0)
+    clock[0] += 13  # containment window over; the contained events are still inside the 120 s window
+    assert scorer.global_threat_level() is ThreatLevel.LOW
+
+    scorer.score_event(make_event("SQL Injection", 10))  # a fresh attack after containment still counts
+    assert scorer.global_threat_level() is ThreatLevel.CRITICAL

@@ -38,6 +38,7 @@ class ThreatScorer:
     def __init__(self) -> None:
         self._landscape: deque[tuple[float, float, str]] = deque(maxlen=300)
         self._contained_until: float = 0.0
+        self._contained_at: float = 0.0
         self._global_floor: float = 0.0
 
     def score_event(self, event: ThreatEvent) -> tuple[float, ThreatLevel]:
@@ -59,24 +60,29 @@ class ThreatScorer:
     @property
     def global_score(self) -> float:
         now = time.time()
+        # Events observed before containment are treated as contained: they fade out over the
+        # containment window and then stop counting, so the gauge can't snap back to CRITICAL
+        # once the window ends. Activity after containment (a new inject) counts normally.
+        post = self._compute_landscape(now, since=self._contained_at)
         if now < self._contained_until:
             remaining = self._contained_until - now
             decay_factor = remaining / 12.0
-            return max(0.0, self._compute_landscape(now) * decay_factor)
+            return max(post, self._compute_landscape(now) * decay_factor)
 
-        landscape = self._compute_landscape(now)
+        landscape = post
         if landscape < self._global_floor:
             self._global_floor = max(0.0, self._global_floor - 0.5)
         return max(landscape, self._global_floor)
 
     def apply_containment(self, seconds: float = 12.0) -> None:
-        self._contained_until = time.time() + seconds
+        self._contained_at = time.time()
+        self._contained_until = self._contained_at + seconds
         self._global_floor = min(self.global_score, 18.0)
 
     def global_threat_level(self) -> ThreatLevel:
         return self._landscape_level(self.global_score)
 
-    def _compute_landscape(self, now: float) -> float:
+    def _compute_landscape(self, now: float, since: float = 0.0) -> float:
         window_seconds = 120.0
         weighted_sum = 0.0
         weight_total = 0.0
@@ -85,7 +91,7 @@ class ThreatScorer:
 
         for ts, risk, attack_type in self._landscape:
             age = now - ts
-            if age > window_seconds:
+            if age > window_seconds or ts <= since:
                 continue
             w = math.exp(-age / 45.0)
             weighted_sum += risk * w
@@ -100,7 +106,7 @@ class ThreatScorer:
         base = weighted_sum / weight_total
         diversity_bonus = min(12.0, len(recent_types) * 3.0)
         frequency_bonus = min(12.0, recent_count * 1.5)
-        recent_risks = [r for ts, r, _ in self._landscape if now - ts <= 30]
+        recent_risks = [r for ts, r, _ in self._landscape if now - ts <= 30 and ts > since]
         peak = max(recent_risks) if recent_risks else 0.0
 
         score = base + diversity_bonus + frequency_bonus
