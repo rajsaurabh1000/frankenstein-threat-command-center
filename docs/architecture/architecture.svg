@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" width="1200" height="1000" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Threat Command Center system architecture">
+<defs>
+  <marker id="arrow-grey" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a97aa"/></marker>
+  <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#fa582d"/></marker>
+  <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3dd68c"/></marker>
+</defs>
+<rect width="1200" height="1000" fill="#05080e"/>
+<text x="40" y="44" font-size="24" fill="#ffffff" font-weight="800" text-anchor="start" letter-spacing="0" style="">Threat Command Center · system architecture</text>
+<line x1="700" y1="38" x2="734" y2="38" stroke="#8a97aa" stroke-width="3" />
+<text x="742" y="43" font-size="13" fill="#94a3b8" font-weight="600" text-anchor="start" letter-spacing="0" style="">data flow</text>
+<line x1="870" y1="38" x2="904" y2="38" stroke="#fa582d" stroke-width="3" />
+<text x="912" y="43" font-size="13" fill="#94a3b8" font-weight="600" text-anchor="start" letter-spacing="0" style="">scoring hot path</text>
+<line x1="1040" y1="38" x2="1074" y2="38" stroke="#3dd68c" stroke-width="3" stroke-dasharray="7 5"/>
+<text x="1082" y="43" font-size="13" fill="#94a3b8" font-weight="600" text-anchor="start" letter-spacing="0" style="">response loop</text>
+<rect x="30" y="70" width="1140" height="190" rx="16" fill="#0b1120" stroke="#263244" stroke-width="1.5"/>
+<text x="52" y="100" font-size="14" fill="#fa582d" font-weight="800" text-anchor="start" letter-spacing="1.6" style="">SOURCES</text>
+<text x="142.2" y="100" font-size="13" fill="#64748b" font-weight="600" text-anchor="start" letter-spacing="0" style="">· as provided by the challenge</text>
+<rect x="60" y="118" width="270" height="112" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="195.0" y="159.0" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Legacy Core</text>
+<text x="195.0" y="180.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">ASP.NET 8 minimal API</text>
+<text x="195.0" y="201.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">GET /api/raw-logs · :5080</text>
+<path d="M380,135 a75.0,11 0 0,1 150,0 v78 a75.0,11 0 0,1 -150,0 z" fill="#111827" stroke="#52627a" stroke-width="1.4"/>
+<path d="M380,135 a75.0,11 0 0,0 150,0" fill="none" stroke="#52627a" stroke-width="1.4"/>
+<text x="455.0" y="182.0" font-size="16" fill="#e2e8f0" font-weight="700" text-anchor="middle" letter-spacing="0" style="">.attack_stop</text>
+<text x="455.0" y="202.0" font-size="13" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">stop flag</text>
+<rect x="575" y="118" width="280" height="112" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="715.0" y="159.0" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Chaos Monkey</text>
+<text x="715.0" y="180.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">AttackSim.ps1 · PowerShell 7</text>
+<text x="715.0" y="201.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">random attack every 1–3 s</text>
+<path d="M905,135 a115.0,11 0 0,1 230,0 v78 a115.0,11 0 0,1 -230,0 z" fill="#111827" stroke="#52627a" stroke-width="1.4"/>
+<path d="M905,135 a115.0,11 0 0,0 230,0" fill="none" stroke="#52627a" stroke-width="1.4"/>
+<text x="1020.0" y="182.0" font-size="16" fill="#e2e8f0" font-weight="700" text-anchor="middle" letter-spacing="0" style="">live_stream.log</text>
+<text x="1020.0" y="202.0" font-size="13" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">JSON lines · ISO-8601 ts</text>
+<path d="M530,174 L573,174" fill="none" stroke="#3dd68c" stroke-width="2.6" stroke-dasharray="8 6" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+<text x="551" y="250" font-size="12" fill="#86efac" font-weight="600" text-anchor="middle" letter-spacing="0" style="">checked every loop → exits</text>
+<path d="M855,174 L903,174" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
+<text x="879" y="162" font-size="12" fill="#aab6c7" font-weight="600" text-anchor="middle" letter-spacing="0" style="">append</text>
+<rect x="30" y="300" width="1140" height="420" rx="16" fill="#0b1120" stroke="#263244" stroke-width="1.5"/>
+<text x="52" y="330" font-size="14" fill="#fa582d" font-weight="800" text-anchor="start" letter-spacing="1.6" style="">ANALYTICS BRIDGE</text>
+<text x="237.6" y="330" font-size="13" fill="#64748b" font-weight="600" text-anchor="start" letter-spacing="0" style="">· Python · FastAPI · :8000</text>
+<rect x="60" y="348" width="270" height="80" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="195.0" y="383.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">LegacyPoller</text>
+<text x="195.0" y="404.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">HTTP poll · every 5 s</text>
+<rect x="880" y="348" width="270" height="80" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="1015.0" y="383.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">LogTailer</text>
+<text x="1015.0" y="404.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">byte-offset tail · 350 ms</text>
+<rect x="60" y="478" width="250" height="104" rx="11" fill="#2a1208" stroke="#fa582d" stroke-width="2"/>
+<text x="185.0" y="515.0" font-size="17" fill="#fed7aa" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Source adapters</text>
+<text x="185.0" y="536.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">→ ThreatEvent v1.1</text>
+<text x="185.0" y="557.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">Pydantic validated</text>
+<rect x="345" y="478" width="250" height="104" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="470.0" y="515.0" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Deduplicator</text>
+<text x="470.0" y="536.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">sha256 event_id</text>
+<text x="470.0" y="557.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">bounded TTL cache</text>
+<rect x="630" y="478" width="250" height="104" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="755.0" y="515.0" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Enrichment</text>
+<text x="755.0" y="536.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">MITRE ATT&amp;CK technique</text>
+<text x="755.0" y="557.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">origin geo · asset region</text>
+<rect x="915" y="478" width="245" height="104" rx="11" fill="#2a1208" stroke="#fa582d" stroke-width="2"/>
+<text x="1037.5" y="515.0" font-size="17" fill="#fed7aa" font-weight="700" text-anchor="middle" letter-spacing="0" style="">ThreatScorer</text>
+<text x="1037.5" y="536.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">event risk · landscape</text>
+<text x="1037.5" y="557.0" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">critical_alarm</text>
+<rect x="60" y="628" width="270" height="72" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="195.0" y="659.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Control-plane guard</text>
+<text x="195.0" y="680.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">rate limit · operator token</text>
+<rect x="560" y="628" width="250" height="72" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="685.0" y="659.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">BriefGenerator</text>
+<text x="685.0" y="680.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">brief · playbook · Q&amp;A</text>
+<rect x="915" y="628" width="245" height="72" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="1037.5" y="659.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">WebSocket hub</text>
+<text x="1037.5" y="680.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">/ws/threats</text>
+<path d="M195,428 L195,476" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
+<path d="M1015,428 L1015,452 L240,452 L240,476" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
+<path d="M310,530.0 L343,530.0" fill="none" stroke="#fa582d" stroke-width="3"  stroke-linejoin="round" marker-end="url(#arrow-orange)"/>
+<path d="M595,530.0 L628,530.0" fill="none" stroke="#fa582d" stroke-width="3"  stroke-linejoin="round" marker-end="url(#arrow-orange)"/>
+<path d="M880,530.0 L913,530.0" fill="none" stroke="#fa582d" stroke-width="3"  stroke-linejoin="round" marker-end="url(#arrow-orange)"/>
+<path d="M1037,582 L1037,626" fill="none" stroke="#fa582d" stroke-width="3"  stroke-linejoin="round" marker-end="url(#arrow-orange)"/>
+<path d="M960,582 L960,604 L685,604 L685,626" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
+<path d="M810,664 L913,664" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
+<path d="M195,230 L195,346" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
+<text x="205" y="250" font-size="12" fill="#aab6c7" font-weight="600" text-anchor="start" letter-spacing="0" style="">raw JSON</text>
+<path d="M950,224 L950,346" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
+<text x="960" y="250" font-size="12" fill="#aab6c7" font-weight="600" text-anchor="start" letter-spacing="0" style="">new lines</text>
+<rect x="30" y="780" width="1140" height="190" rx="16" fill="#0b1120" stroke="#263244" stroke-width="1.5"/>
+<text x="52" y="810" font-size="14" fill="#fa582d" font-weight="800" text-anchor="start" letter-spacing="1.6" style="">THREAT COMMAND CENTER</text>
+<text x="290.6" y="810" font-size="13" fill="#64748b" font-weight="600" text-anchor="start" letter-spacing="0" style="">· Vue 3 · no build step · same origin</text>
+<rect x="60" y="830" width="202" height="108" rx="11" fill="#2a1208" stroke="#fa582d" stroke-width="2"/>
+<text x="161.0" y="879.5" font-size="17" fill="#fed7aa" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Threat meter</text>
+<text x="161.0" y="900.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">+ critical-zone alarm</text>
+<rect x="282" y="830" width="202" height="108" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="383.0" y="879.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Live threat queue</text>
+<text x="383.0" y="900.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">ATT&amp;CK chips · health</text>
+<rect x="504" y="830" width="202" height="108" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="605.0" y="879.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">3D attack globe</text>
+<text x="605.0" y="900.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">multi-region arcs</text>
+<rect x="726" y="830" width="202" height="108" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="827.0" y="879.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Brief + playbook</text>
+<text x="827.0" y="900.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">executive view</text>
+<rect x="948" y="830" width="202" height="108" rx="11" fill="#141c2b" stroke="#3b4a60" stroke-width="1.4"/>
+<text x="1049.0" y="879.5" font-size="17" fill="#f1f5f9" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Lumi copilot</text>
+<text x="1049.0" y="900.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">voice tour · Q&amp;A</text>
+<path d="M1037,700 L1037,828" fill="none" stroke="#fa582d" stroke-width="3"  stroke-linejoin="round" marker-end="url(#arrow-orange)"/>
+<rect x="924.5" y="737" width="225.0" height="22" rx="6" fill="#070b12" opacity="0.92"/>
+<text x="1037" y="752" font-size="13" fill="#fdba74" font-weight="600" text-anchor="middle" letter-spacing="0" style="">event · state · brief · health</text>
+<path d="M160,828 L160,702" fill="none" stroke="#3dd68c" stroke-width="2.6" stroke-dasharray="8 6" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+<rect x="164" y="737" width="281.8" height="22" rx="6" fill="#070b12" opacity="0.92"/>
+<text x="170" y="752" font-size="13" fill="#86efac" font-weight="600" text-anchor="start" letter-spacing="0" style="">POST /api/contain · /api/demo/scenario</text>
+<path d="M60,664 L44,664 L44,282 L455,282 L455,226" fill="none" stroke="#3dd68c" stroke-width="2.6" stroke-dasharray="8 6" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+<rect x="155.25" y="261" width="189.5" height="22" rx="6" fill="#070b12" opacity="0.92"/>
+<text x="250" y="276" font-size="13" fill="#86efac" font-weight="600" text-anchor="middle" letter-spacing="0" style="">contain → write stop flag</text>
+<path d="M455,282 L1090,282 L1090,226" fill="none" stroke="#3dd68c" stroke-width="2.6" stroke-dasharray="8 6" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+<rect x="658.15" y="261" width="203.7" height="22" rx="6" fill="#070b12" opacity="0.92"/>
+<text x="760" y="276" font-size="13" fill="#86efac" font-weight="600" text-anchor="middle" letter-spacing="0" style="">inject → append attack pack</text>
+</svg>

@@ -186,53 +186,50 @@ Free-form questions answered from current telemetry only (template or LLM).
 
 ## 4. Architecture
 
+<a href="docs/architecture/architecture.svg"><img src="docs/architecture/architecture.svg" alt="Threat Command Center system architecture: Sources (ASP.NET Legacy Core, PowerShell AttackSim) feed the Python Analytics Bridge (adapters, dedup, ATT&CK and geo enrichment, scorer, brief, WebSocket hub, control-plane guard), which drives the Vue Command Center; containment and inject flow back to AttackSim" width="100%"></a>
+
+<sub>Diagram as code: [`docs/architecture/generate_architecture.py`](docs/architecture/generate_architecture.py) renders [`architecture.svg`](docs/architecture/architecture.svg) with an explicit layout (`python3 docs/architecture/generate_architecture.py`). The SVG opens in any browser and imports into Lucidchart or draw.io.</sub>
+
+### Inject → alarm → contain, step by step
+
 ```mermaid
-flowchart LR
-  subgraph legacy_side [Legacy Core · C#]
-    legacy["ASP.NET Minimal API<br/>GET /api/raw-logs<br/>:5080"]
-  end
+sequenceDiagram
+    autonumber
+    actor Op as Operator
+    participant UI as Command Center (Vue)
+    participant Br as Analytics Bridge (FastAPI)
+    participant Log as live_stream.log
+    participant Sim as AttackSim.ps1 (PowerShell)
+    participant Leg as Legacy Core (ASP.NET)
 
-  subgraph chaos_side [Chaos Monkey · PowerShell]
-    chaos["AttackSim.ps1<br/>random attack every 1–3s"]
-  end
+    loop every 1–3 s
+        Sim->>Log: append attack (JSON line, ISO-8601 ts)
+    end
+    loop every 5 s
+        Br->>Leg: GET /api/raw-logs
+    end
+    Br->>Log: tail new bytes (350 ms)
+    Br->>Br: adapt → dedup → ATT&CK + geo → score
+    Br-->>UI: WS event + state (score, level, critical_alarm)
 
-  log[("data/live_stream.log<br/>(JSON lines)")]
-  stop[("data/.attack_stop<br/>(stop flag)")]
+    Op->>UI: Inject → Critical Attack
+    UI->>Br: POST /api/demo/scenario (guarded)
+    Br->>Log: append multi-region attack pack
+    Br->>Br: landscape ≥ 78 → critical_alarm = true
+    Br-->>UI: WS event (CRITICAL)
+    UI->>UI: alarm strip + siren, arcs converge on the globe
 
-  subgraph bridge [Analytics Bridge · Python / FastAPI :8000]
-    poller["LegacyPoller<br/>(HTTP poll, 5s)"]
-    tailer["LogTailer<br/>(byte-offset tail, 350ms)"]
-    adapters["Adapters →<br/>ThreatEvent v1"]
-    dedup["Deduplicator<br/>(sha256 event_id, TTL)"]
-    attck["Enrichment<br/>MITRE ATT&CK + origin geo"]
-    scorer["ThreatScorer<br/>event risk + global landscape"]
-    brief["BriefGenerator<br/>template or LLM"]
-    health["HealthMonitor"]
-    ws["WebSocket hub<br/>/ws/threats"]
-  end
-
-  ui["Threat Command Center<br/>Vue 3 · dark mode"]
-
-  legacy -->|JSON| poller
-  chaos -->|append| log
-  log --> tailer
-  poller --> adapters
-  tailer --> adapters
-  adapters --> dedup --> attck --> scorer
-  scorer --> brief
-  scorer --> ws
-  brief --> ws
-  health --> ws
-  ws -->|event · state · brief · health · system| ui
-
-  ui -->|POST /api/contain| stop
-  stop -.->|checked every loop| chaos
-  ui -->|POST /api/demo/scenario| log
+    Op->>UI: Initiate containment
+    UI->>Br: POST /api/contain (guarded)
+    Br->>Sim: write .attack_stop
+    Sim-->>Sim: sees flag on next loop, exits
+    Br-->>UI: WS system + state (CONTAINED, landscape decaying)
+    UI->>UI: alarm clears, arcs halt, meter falls
 ```
 
-The same topology as it ships inside the product (Lumi's intro modal renders this diagram):
+The in-product version of the topology (rendered in Lumi's intro modal):
 
-![Reference architecture — sources, analytics bridge, command center, response loop](dashboard/assets/architecture-tcc.svg)
+![Reference architecture as shown in the product](dashboard/assets/architecture-tcc.svg)
 
 ### End-to-end data flow
 
@@ -669,6 +666,7 @@ frankenstein-threat-command-center/
 │   ├── generate-narration.sh
 │   └── generate_narration.py
 ├── data/                    # runtime: live_stream.log, .attack_stop (git-ignored)
+├── docs/architecture/       # architecture.svg + its generator (diagram as code)
 ├── docs/screenshots/
 ├── docker-compose.yml
 └── .env.example
