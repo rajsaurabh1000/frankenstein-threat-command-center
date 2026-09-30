@@ -83,8 +83,8 @@
 <path d="M950,224 L950,346" fill="none" stroke="#8a97aa" stroke-width="2"  stroke-linejoin="round" marker-end="url(#arrow-grey)"/>
 <text x="960" y="250" font-size="12" fill="#aab6c7" font-weight="600" text-anchor="start" letter-spacing="0" style="">new lines</text>
 <rect x="30" y="780" width="1140" height="190" rx="16" fill="#0b1120" stroke="#263244" stroke-width="1.5"/>
-<text x="52" y="810" font-size="14" fill="#fa582d" font-weight="800" text-anchor="start" letter-spacing="1.6" style="">THREAT COMMAND CENTER</text>
-<text x="290.6" y="810" font-size="13" fill="#64748b" font-weight="600" text-anchor="start" letter-spacing="0" style="">· Vue 3 · no build step · same origin</text>
+<text x="184" y="810" font-size="14" fill="#fa582d" font-weight="800" text-anchor="start" letter-spacing="1.6" style="">THREAT COMMAND CENTER</text>
+<text x="422.6" y="810" font-size="13" fill="#64748b" font-weight="600" text-anchor="start" letter-spacing="0" style="">· Vue 3 · no build step · same origin</text>
 <rect x="60" y="830" width="202" height="108" rx="11" fill="#2a1208" stroke="#fa582d" stroke-width="2"/>
 <text x="161.0" y="879.5" font-size="17" fill="#fed7aa" font-weight="700" text-anchor="middle" letter-spacing="0" style="">Threat meter</text>
 <text x="161.0" y="900.5" font-size="14" fill="#94a3b8" font-weight="400" text-anchor="middle" letter-spacing="0" style="">+ critical-zone alarm</text>

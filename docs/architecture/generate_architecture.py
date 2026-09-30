@@ -32,14 +32,14 @@ def text(x, y, s, size=15, color="#e2e8f0", weight=400, anchor="middle", spacing
     )
 
 
-def band(x, y, w, h, label, sub=""):
+def band(x, y, w, h, label, sub="", label_dx=0):
     parts.append(
         f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="#0b1120" '
         f'stroke="#263244" stroke-width="1.5"/>'
     )
-    text(x + 22, y + 30, label, size=14, color=ORANGE, weight=800, anchor="start", spacing=1.6)
+    text(x + 22 + label_dx, y + 30, label, size=14, color=ORANGE, weight=800, anchor="start", spacing=1.6)
     if sub:  # right after the label, so no connector ever crosses it
-        text(x + 22 + len(label) * 10.6 + 16, y + 30, "· " + sub, size=13, color="#64748b", weight=600, anchor="start")
+        text(x + 22 + label_dx + len(label) * 10.6 + 16, y + 30, "· " + sub, size=13, color="#64748b", weight=600, anchor="start")
 
 
 def box(x, y, w, h, title, lines=(), key=False):
@@ -145,7 +145,7 @@ edge([(950, 224), (950, 346)], "flow")
 text(960, 250, "new lines", size=12, color="#aab6c7", weight=600, anchor="start")
 
 # ---------------------------------------------------------------- 3. command center
-band(30, 780, 1140, 190, "THREAT COMMAND CENTER", "Vue 3 · no build step · same origin")
+band(30, 780, 1140, 190, "THREAT COMMAND CENTER", "Vue 3 · no build step · same origin", label_dx=132)  # clear of the control edge
 cards = [
     ("Threat meter", ("+ critical-zone alarm",), True),
     ("Live threat queue", ("ATT&CK chips · health",), False),
