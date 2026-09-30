@@ -125,7 +125,7 @@ All captured from the [live site](https://frankenstein-threat-command-center.onr
 
 <img src="docs/screenshots/features/02-guided-tour.png" alt="Guided voice walkthrough" width="100%">
 
-**Guided voice walkthrough**<br><sub>Spotlighted steps across the console; Lumi can then run inject → contain on its own.</sub>
+**27-step voice walkthrough**<br><sub>Spotlights every surface, including the new ones (shown: the Global attack map step); Lumi then runs inject → alarm → contain on its own.</sub>
 
 </td>
 </tr>
