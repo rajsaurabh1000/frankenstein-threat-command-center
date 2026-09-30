@@ -112,7 +112,7 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 
 | Lumi AI Copilot intro (problem + architecture) | Command Center at CRITICAL posture |
 |---|---|
-| ![Lumi intro](docs/screenshots/lumi-intro.png) | ![Critical posture](docs/screenshots/command-center-critical.png) |
+| ![Lumi intro](docs/screenshots/copilot-intro-2x.png) | ![Critical posture](docs/screenshots/posture-critical-2x.png) |
 
 **Operations row:** live threat queue with per-source health, the executive brief and playbook, and campaign injection.
 

@@ -1,0 +1,49 @@
+/*
+ * Phones and small tablets (<= 768px). Desktop is unchanged.
+ * Loaded last so these win over the base layout. The layout already stacks to one column;
+ * this keeps the floating controls (action dock, Lumi) off the content and keeps the
+ * architecture diagram legible.
+ */
+@media (max-width: 768px) {
+  /* Let the last panel scroll clear of the fixed action dock. */
+  .app-shell {
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .action-dock {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    left: 0.75rem;
+    right: 0.75rem;
+    padding: 3px;
+    flex-wrap: nowrap;
+  }
+
+  .action-dock-btn {
+    min-width: 0;
+    padding: 0.65rem 0.5rem;
+  }
+
+  /* Lumi: 56px instead of 100px, parked above the dock instead of over the headline. */
+  .copilot-fab--lumi {
+    right: 0.75rem;
+    bottom: calc(4.1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .copilot-fab--lumi .lumi-avatar--fab {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  /* Architecture diagram: keep labels readable and scroll sideways rather than shrinking. */
+  .copilot-arch-svg {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .copilot-arch-svg svg {
+    min-width: 640px;
+    height: auto;
+    max-height: none;
+  }
+}
