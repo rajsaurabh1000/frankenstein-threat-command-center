@@ -99,6 +99,43 @@ def target_location(region: str | None = None) -> GeoLocation:
     return GeoLocation(city=city, country=country, lat=lat, lon=lon, internal=False, illustrative=False)
 
 
+# Which region each protected asset (ThreatEvent.destination) runs in. The modern web tier is in
+# the tenant's primary region; the legacy ASP.NET core still runs in the original datacenter.
+DEFAULT_ASSET_REGIONS = "web-app-01=us-west-2,legacy-saas-core=us-east-1"
+
+
+def asset_regions(spec: str | None = None) -> dict[str, str]:
+    spec = spec if spec is not None else os.environ.get("TCC_ASSET_REGIONS", DEFAULT_ASSET_REGIONS)
+    mapping: dict[str, str] = {}
+    for part in spec.split(","):
+        asset, _, region = part.partition("=")
+        asset, region = asset.strip(), region.strip().lower()
+        if asset and region in REGION_TARGETS:
+            mapping[asset] = region
+    return mapping
+
+
+def region_for(destination: str, spec: str | None = None) -> str:
+    """Region of the asset an event targeted; unknown assets fall back to the primary region."""
+    primary = os.environ.get("TCC_REGION", "us-west-2").strip().lower()
+    return asset_regions(spec).get(destination, primary if primary in REGION_TARGETS else "us-west-2")
+
+
+def protected_regions(spec: str | None = None) -> list[dict]:
+    """Every protected region with its assets, for the attack map (primary region first)."""
+    primary = os.environ.get("TCC_REGION", "us-west-2").strip().lower()
+    by_region: dict[str, list[str]] = {}
+    for asset, region in asset_regions(spec).items():
+        by_region.setdefault(region, []).append(asset)
+    by_region.setdefault(primary if primary in REGION_TARGETS else "us-west-2", [])
+    out = []
+    for region in sorted(by_region, key=lambda r: (r != primary, r)):
+        loc = target_location(region)
+        out.append({"region": region, "city": loc.city, "country": loc.country, "lat": loc.lat, "lon": loc.lon,
+                    "assets": sorted(by_region[region]), "primary": region == primary})
+    return out
+
+
 def enrich(event: ThreatEvent) -> ThreatEvent:
     if event.geo is not None:
         return event

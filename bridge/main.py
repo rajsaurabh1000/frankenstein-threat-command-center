@@ -19,7 +19,7 @@ from ingest import LegacyPoller, LogTailer
 from narration import get_narration_mp3, normalize_text, text_digest, tts_available
 from narration_scripts import COPILOT_INTRO, NARRATION_TOUR
 from guard import control_guard
-from geo import enrich as enrich_geo, target_location
+from geo import enrich as enrich_geo, protected_regions, target_location
 from mitre import enrich as enrich_attack_technique
 from models import (
     AiInsights,
@@ -241,6 +241,7 @@ async def get_platform() -> dict:
         "build": os.environ.get("TCC_BUILD", "release"),
         "codename": "Project Frankenstein",
         "geo_target": target_location(region).model_dump(),
+        "geo_targets": protected_regions(),
         "ai": {
             "llm_configured": brief_gen.llm_active,
             "model": brief_gen.model_name,

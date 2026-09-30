@@ -2,9 +2,9 @@
  * 3D attack globe: dot-matrix Earth (Natural Earth land mask) with live attack arcs from each
  * event's origin to the protected region. Canvas 2D + orthographic projection, no libraries.
  *
- *   const globe = new AttackGlobe(canvas, { target: { lat, lon } });
- *   globe.addAttack({ lat, lon, level: "CRITICAL" });   // arc origin -> target
- *   globe.addInternal("HIGH");                           // insider activity: pulse at the target
+ *   const globe = new AttackGlobe(canvas, { targets: [{ region, city, lat, lon }] });
+ *   globe.addAttack({ lat, lon, level: "CRITICAL", region: "us-west-2" }); // arc origin -> region
+ *   globe.addInternal("HIGH", "us-east-1");                                 // insider activity: pulse
  *   globe.setContained(true);                            // shield ring, arcs fade
  */
 
@@ -19,8 +19,9 @@ const DEG = Math.PI / 180;
 const ARC_FLIGHT_MS = 1700;
 const ARC_LINGER_MS = 5200;
 const MAX_ARCS = 60;
-const HOME = { lon: 175, lat: 30 }; // midpoint between APAC origins and the US west coast
-const SWAY_DEG = 18;
+const HOME = { lon: 175, lat: 26 }; // first view: APAC origins + the US west coast
+const SPIN_DEG_PER_S = 4; // idle rotation: every protected region comes into view (~90 s / turn)
+const FOCUS_MS = 9000; // on a CRITICAL arc, swing to face it for this long, then resume spinning
 
 function unit(lat, lon) {
   const p = lat * DEG;
@@ -41,19 +42,19 @@ function slerp(a, b, t) {
 const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
 export class AttackGlobe {
-  constructor(canvas, { target = { lat: 45.84, lon: -119.7 }, targetLabel = "us-west-2", reducedMotion = false } = {}) {
+  constructor(canvas, { targets = [{ region: "us-west-2", city: "Oregon (us-west-2)", lat: 45.84, lon: -119.7 }], reducedMotion = false } = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.reducedMotion = reducedMotion;
-    this.target = unit(target.lat, target.lon);
-    this.targetLabel = targetLabel;
+    this.setTargets(targets);
+    this.focus = null; // { lon, lat, until }
+    this._lastTick = performance.now();
     this.lon0 = HOME.lon;
     this.lat0 = HOME.lat;
     this.dragging = false;
     this.lastInteraction = 0;
     this.land = []; // [cosLat, sinLat, lonRad]
     this.arcs = [];
-    this.impacts = [];
     this.launched = 0;
     this.contained = false;
     this.containedAt = 0;
@@ -100,9 +101,13 @@ export class AttackGlobe {
     }
   }
 
-  setTarget({ lat, lon, city }) {
-    this.target = unit(lat, lon);
-    if (city) this.targetLabel = city;
+  setTargets(targets) {
+    const list = (targets && targets.length ? targets : [{ region: "us-west-2", city: "Oregon (us-west-2)", lat: 45.84, lon: -119.7 }]);
+    this.targets = list.map((t) => ({ ...t, v: unit(t.lat, t.lon), impacts: [] }));
+  }
+
+  _targetFor(region) {
+    return this.targets.find((t) => t.region === region) || this.targets[0];
   }
 
   setContained(on) {
@@ -110,17 +115,27 @@ export class AttackGlobe {
     this.contained = on;
   }
 
-  addAttack({ lat, lon, level = "HIGH" }) {
+  addAttack({ lat, lon, level = "HIGH", region }) {
     const now = performance.now();
-    this.arcs.push({ from: unit(lat, lon), color: LEVEL_COLORS[level] || ORANGE, born: now, level });
+    const target = this._targetFor(region);
+    this.arcs.push({ from: unit(lat, lon), to: target.v, target, color: LEVEL_COLORS[level] || ORANGE, born: now, level });
+    if (level === "CRITICAL" && !this.dragging && (!this.focus || now > this.focus.until - FOCUS_MS / 2)) {
+      // face the midpoint of the arc so the audience sees it land
+      const mid = slerp(unit(lat, lon), target.v, 0.5);
+      this.focus = {
+        lon: Math.atan2(mid[0], mid[2]) / DEG,
+        lat: Math.max(-30, Math.min(55, Math.asin(Math.max(-1, Math.min(1, mid[1]))) / DEG)),
+        until: now + FOCUS_MS,
+      };
+    }
     if (this.arcs.length > MAX_ARCS) this.arcs.splice(0, this.arcs.length - MAX_ARCS);
     this.launched += 1;
     this.canvas.dataset.arcs = String(this.launched);
     this._start();
   }
 
-  addInternal(level = "HIGH") {
-    this.impacts.push({ born: performance.now(), color: LEVEL_COLORS[level] || ORANGE, internal: true });
+  addInternal(level = "HIGH", region) {
+    this._targetFor(region).impacts.push({ born: performance.now(), color: LEVEL_COLORS[level] || ORANGE, internal: true });
   }
 
   destroy() {
@@ -182,19 +197,19 @@ export class AttackGlobe {
   }
 
   _update(now) {
+    const dt = Math.min(0.1, (now - this._lastTick) / 1000);
+    this._lastTick = now;
     if (this.dragging || this.reducedMotion) return;
     if (now - this.lastInteraction < 3500) return; // hold where the user left it for a moment
-    const t = (now - this._t0) / 1000;
-    const swayLon = HOME.lon + Math.sin(t * 0.11) * SWAY_DEG; // gentle sway around the resting view
-    const dLon = ((swayLon - this.lon0 + 540) % 360) - 180;
-    const dLat = HOME.lat - this.lat0;
-    if (Math.abs(dLon) > 0.4 || Math.abs(dLat) > 0.4) {
-      this.lon0 += dLon * 0.03; // ease back after a drag
-      this.lat0 += dLat * 0.03;
-    } else {
-      this.lon0 = swayLon;
-      this.lat0 = HOME.lat;
+    if (this.focus && now < this.focus.until) {
+      const dLon = ((this.focus.lon - this.lon0 + 540) % 360) - 180;
+      this.lon0 += dLon * Math.min(1, dt * 2.2);
+      this.lat0 += (this.focus.lat - this.lat0) * Math.min(1, dt * 2.2);
+      return;
     }
+    this.focus = null;
+    this.lon0 += SPIN_DEG_PER_S * dt; // continuous rotation
+    this.lat0 += (HOME.lat - this.lat0) * Math.min(1, dt * 0.8);
   }
 
   _project(v) {
@@ -265,7 +280,7 @@ export class AttackGlobe {
     this.arcs = this.arcs.filter((a) => now - a.born < ARC_FLIGHT_MS + ARC_LINGER_MS);
     for (const arc of this.arcs) this._drawArc(arc, now);
 
-    this._drawTarget(now);
+    for (const t of this.targets) this._drawTarget(t, now);
   }
 
   _drawGraticule() {
@@ -294,13 +309,13 @@ export class AttackGlobe {
   }
 
   _arcPoints(arc, steps = 56) {
-    const dot = arc.from[0] * this.target[0] + arc.from[1] * this.target[1] + arc.from[2] * this.target[2];
+    const dot = arc.from[0] * arc.to[0] + arc.from[1] * arc.to[1] + arc.from[2] * arc.to[2];
     const angle = Math.acos(Math.min(1, Math.max(-1, dot)));
     const height = 0.06 + 0.32 * (angle / Math.PI);
     const pts = [];
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const v = slerp(arc.from, this.target, t);
+      const v = slerp(arc.from, arc.to, t);
       const lift = 1 + height * Math.sin(Math.PI * t);
       pts.push(this._project([v[0] * lift, v[1] * lift, v[2] * lift]));
     }
@@ -342,7 +357,7 @@ export class AttackGlobe {
       }
     } else if (!arc.landed) {
       arc.landed = true;
-      this.impacts.push({ born: now, color: arc.color });
+      arc.target.impacts.push({ born: now, color: arc.color });
     }
 
     // origin pulse
@@ -378,13 +393,13 @@ export class AttackGlobe {
     ctx.stroke();
   }
 
-  _drawTarget(now) {
+  _drawTarget(target, now) {
     const { ctx } = this;
-    const p = this._project(this.target);
+    const p = this._project(target.v);
+    target.impacts = target.impacts.filter((im) => now - im.born < 1600);
     if (p[2] <= 0) return;
 
-    this.impacts = this.impacts.filter((im) => now - im.born < 1600);
-    for (const im of this.impacts) {
+    for (const im of target.impacts) {
       const k = (now - im.born) / 1600;
       ctx.strokeStyle = rgba(im.color, (1 - k) * (im.internal ? 0.5 : 0.85));
       ctx.lineWidth = 2;
@@ -404,7 +419,7 @@ export class AttackGlobe {
     ctx.fill();
 
     // label: protected region
-    const label = `PROTECTED · ${this.targetLabel}`.toUpperCase();
+    const label = `PROTECTED · ${target.city}`.toUpperCase();
     ctx.font = "700 10px Inter, system-ui, sans-serif";
     const tw = ctx.measureText(label).width;
     let lx = p[0] + 16;

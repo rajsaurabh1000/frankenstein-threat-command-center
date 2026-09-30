@@ -12,11 +12,11 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 > Interactive and real time, with no installation. All three components (ASP.NET, Python, PowerShell) run in one container on Render's free tier.
 > The first visit after a quiet period can take about a minute while the instance wakes up. On the public URL the AI runs in template mode, and a contained demo automatically resumes after 90 s.
 
-**30-second tour:** click **Skip to dashboard** (or **Play overview** for the narrated architecture) → watch the gauge flash **red** on each high-severity AttackSim hit → press **Inject** in the bottom dock, pick **Critical Attack**, then **Inject campaign**: the gauge locks **CRITICAL** and the brief updates → press **Contain** in the dock: the PowerShell attacker stops and the gauge falls to LOW.
+**30-second tour:** click **Skip to dashboard** (or **Start walkthrough** for the narrated 27-step guide) → watch the threat meter flash **red** on each high-severity AttackSim hit → press **Inject** in the bottom dock, pick **Critical Attack**, then **Inject campaign**: the meter locks **CRITICAL**, the **critical-zone alarm** and siren start, and on the **Global attack map** arcs converge from three continents → press **Contain**: the PowerShell attacker stops, the alarm clears, the arcs halt and the meter falls to LOW. (Click once anywhere first: browsers only allow sound after an interaction.)
 
-![Live demo: the gauge flashes red on a severity-9 AttackSim hit, Inject locks it CRITICAL, Contain drops it](docs/screenshots/live-demo.webp)
+![Live demo: Inject locks the meter CRITICAL and starts the alarm, arcs converge on the attack globe, Contain clears it](docs/screenshots/live-demo-v3.webp)
 
-<sub>Recorded from the live site: live traffic → Inject (Critical) → CRITICAL 85 and the critical-zone alarm → Contain → decay.</sub>
+<sub>Recorded from the live site: live traffic → Inject (Critical) → CRITICAL 85 and the critical-zone alarm → arcs converge on the 3D attack globe → Contain → alarm clears, arcs halt.</sub>
 
 ---
 
@@ -143,7 +143,7 @@ All captured from the [live site](https://frankenstein-threat-command-center.onr
 
 <img src="docs/screenshots/features/04-attack-globe.png" alt="3D attack globe" width="100%">
 
-**3D attack globe**<br><sub>Live arcs from Asia-Pacific, Europe and the Americas converge on Oregon (us-west-2); top origins with their dominant ATT&CK technique.</sub>
+**3D attack globe**<br><sub>Arcs fly to the region of the asset each event targeted (web tier in Oregon, legacy core in N. Virginia); protected regions, top origins with their dominant ATT&CK technique.</sub>
 
 </td>
 </tr>
@@ -499,8 +499,9 @@ The brief asked for **one** jaw-drop feature. This build covers all three sugges
 
 ### 🌐 3D attack globe (the "3D map visualization")
 - A rotating dot-matrix Earth (Natural Earth land mask, pre-computed by [`scripts/generate_land_dots.py`](scripts/generate_land_dots.py) into a 36 KB file shipped with the app) rendered with an orthographic projection on Canvas 2D. No WebGL or libraries, 60 fps.
-- Every live event launches a great-circle arc from its origin to the protected region (the tenant's **us-west-2, Oregon**), coloured by threat level, with an origin pulse and an impact ripple. Internal (LAN) activity pulses at the target instead. **Contain** fades the arcs and draws a shield ring.
-- Drag to rotate; it eases back to a Pacific-centred view. The render loop pauses off-screen and in background tabs, and respects reduced motion.
+- **Multi-region, driven by real event data:** each protected asset lives in a region (`TCC_ASSET_REGIONS`, default: the modern web tier `web-app-01` in **us-west-2 · Oregon**, the legacy ASP.NET core `legacy-saas-core` in **us-east-1 · N. Virginia**, its original datacenter). Every event's arc flies from its origin to the region of the asset it actually targeted, coloured by threat level, with an origin pulse and an impact ripple. Internal (LAN) activity pulses at that region instead. **Contain** fades the arcs and draws shield rings.
+- The Critical campaign converges from three continents (Asia-Pacific, Frankfurt, Newark). The globe rotates slowly so every region comes into view and **swings to face each critical arc** before resuming; drag to rotate by hand. The render loop pauses off-screen and in background tabs, and respects reduced motion.
+- The side panel lists **protected regions** with their assets and event counts, plus top origins with each origin's dominant ATT&CK technique.
 - A side panel shows attack origins, countries, internal events and a top-origins leaderboard.
 - **Honest by design:** the challenge's telemetry uses *simulated* addresses, so origins are placed by address range (APNIC 103.x → Asia-Pacific cities, 185.220.101.x → Frankfurt, …) and the UI labels positions as illustrative. A geo-IP service would plug into the same enrichment stage.
 
@@ -510,7 +511,7 @@ The brief asked for **one** jaw-drop feature. This build covers all three sugges
 ### 🤖 Lumi — AI Copilot guide with voice
 - On load, an intro modal presents the problem statement, how it's solved, and the reference architecture diagram.
 - **Play overview** narrates the full overview (problem statement, then approach) from 0:00. Nothing auto-plays on page load, so browser autoplay rules never cut in mid-sentence. **Replay overview** stops everything, including a running tour, and restarts from the beginning.
-- **Start walkthrough** runs about 20 spotlighted tour steps across the console, and the copilot then runs the operational flow itself: inject a campaign, refresh the brief, and initiate containment. The guide bar offers **Pause** / **Read aloud** / **Back** / **Next highlight**.
+- **Start walkthrough** runs a 27-step spotlighted, neural-voice tour of the whole console, including the **threat landscape meter**, the **global attack map** (regions, arcs, ATT&CK per origin), **ATT&CK chips** in the queue and the interactive donuts. The copilot then runs the operational flow itself: it injects a campaign, narrates the **critical-zone alarm** and the arcs converging on the map, refreshes the brief, and initiates containment. The guide bar offers **Pause** / **Read aloud** / **Back** / **Next highlight**.
 - Each intro or tour run carries a token, so delayed continuations (auto-advance timers, step actions, audio callbacks) from an abandoned run can never talk over a newer one.
 - The voice clips are **pre-generated and committed** (`dashboard/assets/narration/`), so narration works offline. A clip is only used if its digest matches the current script text. Otherwise the bridge generates it live via `edge-tts` and caches it, so an edited script never plays a stale clip.
 
@@ -577,7 +578,9 @@ Copy `.env.example` to `.env` (it is git-ignored). `start-demo.sh` loads it auto
 | `EDGE_TTS_VOICE` | `en-US-JennyNeural` | Voice for Lumi narration |
 | `CONTROL_RATE_LIMIT` | `30/60` | Control actions allowed per client per window (`20/60` on the public URL); `off` disables |
 | `CONTROL_TOKEN` | *(empty)* | When set, control actions require the `X-Control-Token` header |
-| `DEPLOY_ENV`, `TCC_REGION`, `TCC_TENANT`, `TCC_VERSION`, `TCC_BUILD` | `enterprise`, `us-west-2`, `primary`, `1.0.0`, `release` | Cosmetic console metadata shown in the header / exports |
+| `TCC_REGION` | `us-west-2` | Tenant's primary region (header, exports, attack-map default target) |
+| `TCC_ASSET_REGIONS` | `web-app-01=us-west-2,legacy-saas-core=us-east-1` | Which region each protected asset (event `destination`) runs in; drives the attack-map targets. Supported: `us-west-2`, `us-east-1`, `eu-west-1`, `ap-southeast-1` |
+| `DEPLOY_ENV`, `TCC_TENANT`, `TCC_VERSION`, `TCC_BUILD` | `enterprise`, `primary`, `1.0.0`, `release` | Cosmetic console metadata shown in the header / exports |
 
 ### Running components individually
 
@@ -717,7 +720,7 @@ frankenstein-threat-command-center/
 
 ## 16. Tests
 
-A `pytest` suite (56 tests, about 1.5 s) plus a browser smoke test covers the parts that carry the architecture:
+A `pytest` suite (58 tests, about 1.5 s) plus a browser smoke test covers the parts that carry the architecture:
 
 | File | What it proves |
 |------|----------------|
@@ -726,7 +729,7 @@ A `pytest` suite (56 tests, about 1.5 s) plus a browser smoke test covers the pa
 | [`tests/test_dedup.py`](tests/test_dedup.py) | Deterministic, field-sensitive `event_id`s; a repeated observation is dropped; the cache is bounded |
 | [`tests/test_ingest.py`](tests/test_ingest.py) | JSON-lines, concatenated, and truncated log writes; PowerShell and ASP.NET payloads both map to `ThreatEvent` v1; severity clamping and defaults |
 | [`tests/test_api.py`](tests/test_api.py) | End to end through FastAPI: inject → real log-tail ingest → CRITICAL → contain writes the AttackSim stop flag; `/api/mitigate` alias; invalid scenarios rejected; template brief without an LLM |
-| [`tests/test_geo.py`](tests/test_geo.py) | Every scenario origin gets a valid location; AttackSim's range lands in Asia-Pacific deterministically; RFC 1918 / loopback are internal while RFC 5737 documentation ranges are external attackers; the target follows the tenant region |
+| [`tests/test_geo.py`](tests/test_geo.py) | Every scenario origin gets a valid location; AttackSim's range lands in Asia-Pacific deterministically; RFC 1918 / loopback are internal while RFC 5737 documentation ranges are external attackers; assets map to their regions (unknown → primary) and protected regions list primary first |
 | [`tests/test_mitre.py`](tests/test_mitre.py) | Every attack type AttackSim, the legacy API and the scenario packs can emit maps to a well-formed ATT&CK technique; enrichment tags events and leaves unknown types alone |
 | [`tests/test_guard.py`](tests/test_guard.py) | Per-client rate limit returns 429 with `Retry-After`; clients don't share quotas; `X-Forwarded-For` resolves the real client; the optional token returns 401 without it |
 | [`tests/test_properties.py`](tests/test_properties.py) | Property-based (Hypothesis), over random events and streams: risk always 0–100, higher severity never lowers risk or level, the landscape stays in range, and `critical_alarm` always implies CRITICAL |
@@ -764,21 +767,27 @@ Tests run against a temporary `DATA_DIR` with the LLM disabled, so they never to
 
 ## 18. Known limitations & next steps
 
-**Limitations (scoped for a 24-hour demo)**
-- State lives in memory, so a bridge restart clears history (clients reconnect cleanly and the live stream refills within seconds). On the free hosting tier the disk is ephemeral, so persistence would not survive a redeploy anyway.
-- Containment is a local stop flag, not a real enforcement action.
-- The control plane is rate-limited, with an optional shared operator token; there are no per-user identities or roles.
-- ATT&CK mapping is by attack type (one technique each), not by behavioural analytics over event sequences.
-- Attack-map positions are illustrative: the source addresses are simulated, so they are placed by address range rather than a geo-IP lookup.
+Everything in the brief is delivered (see [§2](#2-deliverables-checklist)): the bridge, the command center with its live feed and red gauge, **all three** suggested "Sales Edge" examples, and the public repository. What remains are deliberate scope decisions for a 24-hour demo:
+
+**Limitations**
+- **State is in memory.** A bridge restart clears history (clients reconnect and the live stream refills within seconds). On the free hosting tier the disk is ephemeral, so persistence would not survive a redeploy anyway.
+- **Containment is a demo control.** It writes a local stop flag for AttackSim; it does not call a firewall or EDR.
+- **Control plane is rate-limited, not identity-aware.** An optional shared operator token exists; there are no per-user identities, roles or audit log.
+- **ATT&CK mapping is one technique per attack type**, not behavioural analytics over event sequences.
+- **Attack-map origins are illustrative.** The challenge's addresses are simulated, so origins are placed by address range; asset → region mapping is configuration, not discovered from cloud inventory.
+- **AI runs in template mode by default** (and always on the public URL, so nobody can spend an API key). With `OPENAI_API_KEY` set, the same brief, playbook and Q&A use an LLM over minimized telemetry.
+- **Hosted demo sleeps on the free tier.** A keep-alive ping keeps it warm, but GitHub may delay scheduled runs, so a first visit can take about a minute.
+- **Browsers require one click before audio.** The siren and Lumi's voice start after the first interaction with the page.
 
 **Next steps toward production**
 - Persist events to a time-series store and replay on restart.
-- Replace the stop flag with a real response integration (e.g. a SOAR playbook or firewall dynamic address group) behind the same `/api/contain` contract.
+- Replace the stop flag with a real response integration (a SOAR playbook, or a firewall dynamic address group) behind the same `/api/contain` contract.
 - Per-user AuthN/Z (SSO/OIDC) with viewer vs. operator roles, and an audit log of containment actions.
 - Sequence-aware detections that chain ATT&CK tactics into a kill-chain view.
-- A real geo-IP service behind the existing geo enrichment stage.
+- A real geo-IP service behind the existing geo enrichment stage, and asset → region discovery from cloud inventory.
+- Multi-tenant isolation: a tenant ID on `ThreatEvent` and per-tenant views.
 
-**Already addressed from the earlier list:** MITRE ATT&CK mapping, a 3D attack map with origin geo enrichment, full ISO-8601 timestamps from AttackSim, property-based scorer tests, a WebSocket contract test, an automated Playwright UI smoke test in CI, and a guarded control plane.
+**Delivered beyond the brief:** MITRE ATT&CK enrichment, a multi-region 3D attack globe, an instant critical-zone alarm that ignores single-hit flashes, a 27-step voice-guided walkthrough, full ISO-8601 timestamps from AttackSim, a guarded control plane, 58 unit, property and contract tests, a Playwright UI smoke test in CI, and a single-container hosted deployment.
 
 ---
 

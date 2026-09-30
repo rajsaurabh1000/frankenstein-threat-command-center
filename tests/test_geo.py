@@ -49,3 +49,18 @@ def test_enrich_adds_geo_to_the_event():
         source_ip="185.220.101.12",
     )
     assert geo.enrich(event).geo.city == "Frankfurt"
+
+
+def test_assets_map_to_their_regions_and_unknown_assets_fall_back_to_primary():
+    assert geo.region_for("web-app-01") == "us-west-2"
+    assert geo.region_for("legacy-saas-core") == "us-east-1"
+    assert geo.region_for("something-else") == "us-west-2"
+    assert geo.region_for("web-app-01", spec="web-app-01=eu-west-1") == "eu-west-1"
+    assert geo.asset_regions("a=us-east-1, b=not-a-region,=x") == {"a": "us-east-1"}
+
+
+def test_protected_regions_lists_primary_first_with_assets():
+    regions = geo.protected_regions()
+    assert regions[0]["region"] == "us-west-2" and regions[0]["primary"] is True
+    assert {r["region"] for r in regions} == {"us-west-2", "us-east-1"}
+    assert "legacy-saas-core" in next(r for r in regions if r["region"] == "us-east-1")["assets"]

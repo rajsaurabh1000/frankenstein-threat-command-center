@@ -42,6 +42,7 @@ def test_critical_scenario_flows_through_real_ingest_path(client):
     assert sqli["event"]["schema_version"] == "1.1"
     assert sqli["event"]["geo"]["country"] and sqli["event"]["geo"]["internal"] is False  # origin geo enrichment
     assert client.get("/api/platform").json()["geo_target"]["city"].startswith("Oregon")
+    assert [r["region"] for r in client.get("/api/platform").json()["geo_targets"]] == ["us-west-2", "us-east-1"]
 
 
 def test_unknown_scenario_is_rejected(client):

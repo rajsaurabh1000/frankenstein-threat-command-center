@@ -50,6 +50,12 @@
       "title": "Global posture deck",
       "tab": "executive"
     },
+    "threat-meter": {
+      "file": "narr_b492ba757e74d1e6.mp3",
+      "digest": "b492ba757e74d1e6",
+      "title": "Threat landscape meter",
+      "tab": "executive"
+    },
     "contain": {
       "file": "narr_fd2c4c091d4a7ee9.mp3",
       "digest": "fd2c4c091d4a7ee9",
@@ -62,15 +68,21 @@
       "title": "Posture alerts",
       "tab": "executive"
     },
+    "attack-map": {
+      "file": "narr_b421c506138e5a1c.mp3",
+      "digest": "b421c506138e5a1c",
+      "title": "Global attack map",
+      "tab": "executive"
+    },
     "analytics": {
-      "file": "narr_8f791113c23a5a4a.mp3",
-      "digest": "8f791113c23a5a4a",
+      "file": "narr_b21bae498510e1df.mp3",
+      "digest": "b21bae498510e1df",
       "title": "Exposure analytics",
       "tab": "executive"
     },
     "telemetry": {
-      "file": "narr_e450eed786835b78.mp3",
-      "digest": "e450eed786835b78",
+      "file": "narr_f496533d4973f068.mp3",
+      "digest": "f496533d4973f068",
       "title": "Live threat queue",
       "tab": "operations"
     },
@@ -123,9 +135,15 @@
       "tab": "operations"
     },
     "ops-posture": {
-      "file": "narr_9d9d95c8346126e2.mp3",
-      "digest": "9d9d95c8346126e2",
+      "file": "narr_202b6fbd789742cb.mp3",
+      "digest": "202b6fbd789742cb",
       "title": "Demo \u2014 posture and landscape shift",
+      "tab": "executive"
+    },
+    "ops-map": {
+      "file": "narr_43955ff5a3af899d.mp3",
+      "digest": "43955ff5a3af899d",
+      "title": "Campaign on the attack map",
       "tab": "executive"
     },
     "ops-brief": {
@@ -135,8 +153,8 @@
       "tab": "intelligence"
     },
     "ops-contain": {
-      "file": "narr_1073e9fa5043ffea.mp3",
-      "digest": "1073e9fa5043ffea",
+      "file": "narr_b8802388eca029c2.mp3",
+      "digest": "b8802388eca029c2",
       "title": "Demo \u2014 initiate containment",
       "tab": "executive"
     },
@@ -147,8 +165,8 @@
       "tab": "executive"
     },
     "complete": {
-      "file": "narr_55901a00c2872799.mp3",
-      "digest": "55901a00c2872799",
+      "file": "narr_569e0d070ece3090.mp3",
+      "digest": "569e0d070ece3090",
       "title": "Orientation complete",
       "tab": "executive"
     }

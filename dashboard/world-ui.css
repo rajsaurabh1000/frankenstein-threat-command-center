@@ -1616,7 +1616,7 @@ body.tcc-ready {
   font-size: 13px;
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.78);
-  max-height: 4.5rem;
+  max-height: 6.4rem; /* four lines: the longest narration fits without an inner scrollbar */
   overflow-y: auto;
 }
 

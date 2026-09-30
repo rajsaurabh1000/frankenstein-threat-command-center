@@ -220,3 +220,56 @@
     height: 340px;
   }
 }
+
+.attack-map-regions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attack-map-regions li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.76rem;
+  color: #e2e8f0;
+}
+
+.attack-map-regions strong {
+  display: block;
+  font-weight: 700;
+}
+
+.attack-map-regions em {
+  display: block;
+  font-style: normal;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.6rem;
+  color: #64748b;
+}
+
+.attack-map-regions .tabular {
+  font-weight: 800;
+  color: #fdba74;
+}
+
+.attack-map-region-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fa582d;
+  box-shadow: 0 0 0 3px rgba(250, 88, 45, 0.2);
+}
+
+.attack-map-region-dot.is-primary {
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(250, 88, 45, 0.55);
+}

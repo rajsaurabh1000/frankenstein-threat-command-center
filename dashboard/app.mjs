@@ -830,19 +830,42 @@ createApp({
     const globeCanvas = ref(null);
     let globe = null;
 
+    const protectedRegions = computed(() =>
+      platform.value.geo_targets?.length
+        ? platform.value.geo_targets
+        : [{ region: "us-west-2", city: "Oregon (us-west-2)", lat: 45.84, lon: -119.7, assets: [], primary: true }]
+    );
+
+    /** Region of the asset an event targeted (web tier vs. legacy core), from the bridge's config. */
+    function regionForAsset(destination) {
+      const hit = protectedRegions.value.find((r) => (r.assets || []).includes(destination));
+      return (hit || protectedRegions.value[0]).region;
+    }
+
+    const regionHits = computed(() => {
+      const counts = Object.fromEntries(protectedRegions.value.map((r) => [r.region, { ext: 0, internal: 0 }]));
+      for (const row of feed.value) {
+        const g = row.event?.geo;
+        if (!g) continue;
+        const c = counts[regionForAsset(row.event.destination)];
+        if (c) g.internal ? (c.internal += 1) : (c.ext += 1);
+      }
+      return protectedRegions.value.map((r) => ({ ...r, ...counts[r.region] }));
+    });
+
     function globeEvent(item) {
       const geo = item?.event?.geo;
       if (!globe || !geo) return;
-      if (geo.internal) globe.addInternal(item.threat_level);
-      else globe.addAttack({ lat: geo.lat, lon: geo.lon, level: item.threat_level });
+      const region = regionForAsset(item.event.destination);
+      if (geo.internal) globe.addInternal(item.threat_level, region);
+      else globe.addAttack({ lat: geo.lat, lon: geo.lon, level: item.threat_level, region });
     }
 
     function initGlobe() {
       if (globe || !globeCanvas.value) return;
       const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       globe = new AttackGlobe(globeCanvas.value, {
-        target: platform.value.geo_target || { lat: 45.84, lon: -119.7 },
-        targetLabel: platform.value.geo_target?.city || "Oregon (us-west-2)",
+        targets: protectedRegions.value,
         reducedMotion: !!reduced,
       });
       globe.setContained(contained.value);
@@ -856,8 +879,8 @@ createApp({
 
     watch(contained, (on) => globe?.setContained(on));
     watch(
-      () => platform.value.geo_target,
-      (t) => t && globe?.setTarget(t)
+      () => platform.value.geo_targets,
+      (t) => t && globe?.setTargets(t)
     );
 
     const mapOrigins = computed(() => {
@@ -2349,6 +2372,8 @@ createApp({
       postureAlerts,
       gaugeOffset,
       globeCanvas,
+      protectedRegions,
+      regionHits,
       mapOrigins,
       mapStats,
       controlNotice,
@@ -2724,8 +2749,9 @@ createApp({
         </div>
 
         <div
+          id="threat-meter"
           class="command-deck-gauge panel gauge-panel gauge-panel--hero threat-meter"
-          :class="['threat-meter--' + globalLevel.toLowerCase(), { 'gauge-panel--hot': isCritical, 'threat-meter--alarm': alarmActive }]"
+          :class="['threat-meter--' + globalLevel.toLowerCase(), { 'gauge-panel--hot': isCritical, 'threat-meter--alarm': alarmActive, 'tcc-tour-spotlight': tourHighlightId === 'threat-meter' }]"
         >
           <div class="threat-meter-head">
             <span class="threat-meter-title">Threat landscape</span>
@@ -2802,14 +2828,15 @@ createApp({
         </p>
       </div>
 
-      <section class="panel attack-map" id="section-map" aria-label="Global attack map">
+      <section class="panel attack-map" id="section-map" aria-label="Global attack map" :class="{ 'tcc-tour-spotlight': tourHighlightId === 'section-map' }">
         <div class="attack-map-head">
           <div>
             <span class="panel-eyebrow">Threat intelligence</span>
             <h2>Global attack map</h2>
             <p class="attack-map-sub">
-              Live arcs from attack origins to protected assets in
-              <strong>{{ platform.geo_target?.city || 'Oregon (us-west-2)' }}</strong>. Drag the globe to rotate.
+              Live arcs from attack origins to the region of the asset each event targeted:
+              <template v-for="(r, i) in protectedRegions" :key="r.region"><strong>{{ r.city }}</strong><span v-if="i < protectedRegions.length - 1"> and </span></template>.
+              Drag the globe to rotate.
             </p>
           </div>
           <ul class="attack-map-legend" aria-label="Arc colour by threat level">
@@ -2830,6 +2857,17 @@ createApp({
               <div><strong class="tabular">{{ mapStats.countries }}</strong><span>Countries</span></div>
               <div><strong class="tabular">{{ mapStats.internal }}</strong><span>Internal events</span></div>
             </div>
+            <h3 class="attack-map-h3">Protected regions</h3>
+            <ul class="attack-map-regions">
+              <li v-for="r in regionHits" :key="r.region">
+                <span class="attack-map-region-dot" :class="{ 'is-primary': r.primary }"></span>
+                <div>
+                  <strong>{{ r.city }}</strong>
+                  <em>{{ (r.assets || []).join(' · ') || 'primary region' }}</em>
+                </div>
+                <span class="tabular" :title="r.ext + ' external · ' + r.internal + ' internal events targeting this region'">{{ r.ext + r.internal }}</span>
+              </li>
+            </ul>
             <h3 class="attack-map-h3">Top origins</h3>
             <ol class="attack-map-origins">
               <li v-for="o in mapOrigins" :key="o.city + o.country">

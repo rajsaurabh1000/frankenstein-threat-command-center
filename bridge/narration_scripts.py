@@ -97,6 +97,17 @@ NARRATION_TOUR = [
         ),
     },
     {
+        "id": "threat-meter",
+        "title": "Threat landscape meter",
+        "tab": "executive",
+        "highlight": "threat-meter",
+        "text": (
+            "The threat meter shows the live landscape score against the real zones: low, elevated from "
+            "thirty-five, high from fifty-eight, and critical from seventy-eight. The needle tracks the score, "
+            "the arrow shows the change against a minute ago, and the trend marks the critical threshold."
+        ),
+    },
+    {
         "id": "contain",
         "title": "Response controls",
         "tab": "executive",
@@ -117,13 +128,26 @@ NARRATION_TOUR = [
         ),
     },
     {
+        "id": "attack-map",
+        "title": "Global attack map",
+        "tab": "executive",
+        "highlight": "section-map",
+        "text": (
+            "The global attack map plots every event on a live 3D globe. Arcs fly from each origin to the region "
+            "of the asset it targeted: the web tier in Oregon and the legacy core in North Virginia, coloured by "
+            "threat level. The side panel ranks top origins with their dominant ATT&CK technique. Positions are "
+            "illustrative, because the telemetry uses simulated addresses."
+        ),
+    },
+    {
         "id": "analytics",
         "title": "Exposure analytics",
         "tab": "executive",
         "highlight": "section-analytics",
         "text": (
-            "Analytics decompose the unified queue: landscape trend, threat-level mix, attack vectors, "
-            "severity and ingest composition, and top actors — formatted for executive and SOC review."
+            "Analytics decompose the unified queue: landscape trend, threat-level mix, attack vectors, severity "
+            "and ingest composition, and top actors. Hover or tap any donut slice to see its share, event count, "
+            "and MITRE ATT&CK technique."
         ),
     },
     {
@@ -132,8 +156,9 @@ NARRATION_TOUR = [
         "tab": "operations",
         "highlight": "section-live",
         "text": (
-            "Every row is a ThreatEvent with technique, source, ingest path, severity, and computed risk. "
-            "The feed updates over the WebSocket as the bridge normalizes new events."
+            "Every row is a ThreatEvent with technique, source, ingest path, severity, and computed risk, plus a "
+            "MITRE ATT&CK chip such as T1190 for SQL injection that links to the official technique page. The "
+            "feed updates over the WebSocket as the bridge normalizes and enriches new events."
         ),
     },
     {
@@ -226,8 +251,21 @@ NARRATION_TOUR = [
         "tab": "executive",
         "highlight": "command-deck",
         "text": (
-            "Landscape score and threat level now reflect the injected campaign. "
-            "Analytics and KPIs move with the unified queue — ingest, score, aggregate, publish to the console."
+            "The landscape is now critical, so the alarm fires instantly: the red alarm strip, a siren, a timer, "
+            "and a pulsing containment button. A single high-severity hit only flashes the gauge; a critical "
+            "landscape raises the alarm. Acknowledge snoozes the siren for fifteen seconds, and only containment "
+            "clears it."
+        ),
+    },
+    {
+        "id": "ops-map",
+        "title": "Campaign on the attack map",
+        "tab": "executive",
+        "highlight": "section-map",
+        "text": (
+            "On the attack map, the campaign converges from three continents, Asia-Pacific, Europe, and the "
+            "Americas, on the protected web tier in Oregon. The globe swings to face critical arcs so the impact "
+            "is visible."
         ),
     },
     {
@@ -248,8 +286,9 @@ NARRATION_TOUR = [
         "highlight": "contain-primary-btn",
         "action": "contain",
         "text": (
-            "Initiating containment from the posture deck — simulator stop, contained state, and landscape decay — "
-            "completing the detect-to-respond path you expect from this dashboard."
+            "Initiating containment from the posture deck: the simulator stops, the alarm clears, arcs on the "
+            "attack map halt behind a shield ring, and the landscape decays, completing the detect-to-respond "
+            "path."
         ),
     },
     {
@@ -267,8 +306,9 @@ NARRATION_TOUR = [
         "tab": "executive",
         "highlight": "command-deck",
         "text": (
-            "You have seen the architecture context, product surfaces, and a full inject-to-contain workflow. "
-            "Replay this guide from the toolbar any time; use Lumi for ad-hoc questions during operations."
+            "You have seen the architecture, the threat meter and alarm, the global attack map with MITRE ATT&CK "
+            "context, and a full inject-to-contain workflow. Replay this guide from the toolbar any time, and use "
+            "Lumi for ad-hoc questions during operations."
         ),
     },
 ]
