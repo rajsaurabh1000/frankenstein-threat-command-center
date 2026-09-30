@@ -188,7 +188,6 @@ Free-form questions answered from current telemetry only (template or LLM).
 
 <a href="docs/architecture/architecture.svg"><img src="docs/architecture/architecture.svg" alt="Threat Command Center system architecture: Sources (ASP.NET Legacy Core, PowerShell AttackSim) feed the Python Analytics Bridge (adapters, dedup, ATT&CK and geo enrichment, scorer, brief, WebSocket hub, control-plane guard), which drives the Vue Command Center; containment and inject flow back to AttackSim" width="100%"></a>
 
-<sub>Diagram as code: [`docs/architecture/generate_architecture.py`](docs/architecture/generate_architecture.py) renders [`architecture.svg`](docs/architecture/architecture.svg) with an explicit layout (`python3 docs/architecture/generate_architecture.py`). The SVG opens in any browser and imports into Lucidchart or draw.io.</sub>
 
 ### Inject → alarm → contain, step by step
 
@@ -227,7 +226,7 @@ sequenceDiagram
     UI->>UI: alarm clears, arcs halt, meter falls
 ```
 
-The in-product version of the topology (rendered in Lumi's intro modal):
+The in-product version of the topology:
 
 ![Reference architecture as shown in the product](dashboard/assets/architecture-tcc.svg)
 
