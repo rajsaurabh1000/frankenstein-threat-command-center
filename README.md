@@ -14,7 +14,7 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 
 **30-second tour:** click **Skip to dashboard** (or **Play overview** for the narrated architecture) → watch the gauge flash **red** on each high-severity AttackSim hit → press **Inject** in the bottom dock, pick **Critical Attack**, then **Inject campaign**: the gauge locks **CRITICAL** and the brief updates → press **Contain** in the dock: the PowerShell attacker stops and the gauge falls to LOW.
 
-![Live demo: the gauge flashes red on a severity-9 AttackSim hit, Inject locks it CRITICAL, Contain drops it](docs/screenshots/live-demo.gif)
+![Live demo: the gauge flashes red on a severity-9 AttackSim hit, Inject locks it CRITICAL, Contain drops it](docs/screenshots/live-demo.webp)
 
 <sub>Recorded from the live site: a red flash from a high-severity AttackSim hit → back to HIGH → Inject (Critical) → CRITICAL 85 → Contain → decay.</sub>
 
