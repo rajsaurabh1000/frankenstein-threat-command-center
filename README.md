@@ -16,7 +16,7 @@ Challenge spec: [Joe-Juette/tc-Frankenstein](https://github.com/Joe-Juette/tc-Fr
 
 ![Live demo: the gauge flashes red on a severity-9 AttackSim hit, Inject locks it CRITICAL, Contain drops it](docs/screenshots/live-demo.webp)
 
-<sub>Recorded from the live site: a red flash from a high-severity AttackSim hit → back to HIGH → Inject (Critical) → CRITICAL 85 → Contain → decay.</sub>
+<sub>Recorded from the live site: live traffic → Inject (Critical) → CRITICAL 85 and the critical-zone alarm → Contain → decay.</sub>
 
 ---
 
@@ -116,71 +116,57 @@ All captured from the [live site](https://frankenstein-threat-command-center.onr
 <tr>
 <td width="50%" valign="top">
 
-<img src="docs/screenshots/features/01-lumi-intro.png" alt="Lumi AI Copilot intro" width="100%">
+<img src="docs/screenshots/features/01-lumi-intro.png" alt="Palo Alto branded intro" width="100%">
 
-**Lumi AI Copilot intro**<br><sub>Problem, approach and the reference architecture, with a narrated voice overview.</sub>
+**Palo Alto branded intro**<br><sub>Problem, approach and reference architecture, with a narrated voice overview and the tech stack.</sub>
 
 </td>
 <td width="50%" valign="top">
 
 <img src="docs/screenshots/features/02-guided-tour.png" alt="Guided voice walkthrough" width="100%">
 
-**Guided voice walkthrough**<br><sub>24 spotlighted steps across the console; Lumi can then run inject → contain on its own.</sub>
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-<img src="docs/screenshots/features/03-posture-critical.png" alt="Global posture: CRITICAL" width="100%">
-
-**Global posture: CRITICAL**<br><sub>Landscape gauge, headline, KPIs, and one-click containment.</sub>
-
-</td>
-<td width="50%" valign="top">
-
-<img src="docs/screenshots/features/10-containment.png" alt="After Contain" width="100%">
-
-**After Contain**<br><sub>AttackSim is stopped, status CONTAINED, the landscape decays.</sub>
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-<img src="docs/screenshots/features/06-executive-brief.png" alt="Executive brief" width="100%">
-
-**Executive brief**<br><sub>CISO-ready summary; always quotes the same posture as the gauge.</sub>
-
-</td>
-<td width="50%" valign="top">
-
-<img src="docs/screenshots/features/07-playbook.png" alt="Recommendations and playbook" width="100%">
-
-**Recommendations & playbook**<br><sub>Named playbook, three actions, focal-event analysis, confidence.</sub>
+**Guided voice walkthrough**<br><sub>Spotlighted steps across the console; Lumi can then run inject → contain on its own.</sub>
 
 </td>
 </tr>
 <tr>
 <td colspan="2" width="100%" valign="top">
 
-<img src="docs/screenshots/features/04-analytics.png" alt="Threat analytics" width="100%">
+<img src="docs/screenshots/features/03-critical-alarm.png" alt="Critical-zone alarm" width="100%">
 
-**Threat analytics**<br><sub>Severity share, dominant vector, landscape trend, level mix, attack vectors, top actors.</sub>
+**Critical-zone alarm**<br><sub>Instant on a critical landscape: flashing strip, siren, timer, pulsing containment, threat meter at 85/100.</sub>
+
+</td>
+</tr>
+<tr>
+<td colspan="2" width="100%" valign="top">
+
+<img src="docs/screenshots/features/04-attack-globe.png" alt="3D attack globe" width="100%">
+
+**3D attack globe**<br><sub>Live arcs from Asia-Pacific, Europe and the Americas converge on Oregon (us-west-2); top origins with their dominant ATT&CK technique.</sub>
+
+</td>
+</tr>
+<tr>
+<td colspan="2" width="100%" valign="top">
+
+<img src="docs/screenshots/features/05-analytics-hover.png" alt="Interactive analytics" width="100%">
+
+**Interactive analytics**<br><sub>Hover a donut slice: it pops out, the centre shows its share and count, the caption adds the ATT&CK ID.</sub>
 
 </td>
 </tr>
 <tr>
 <td width="50%" valign="top">
 
-<img src="docs/screenshots/features/05-live-threat-queue.png" alt="Live threat queue + platform health" width="100%">
+<img src="docs/screenshots/features/06-live-threat-queue.png" alt="Live threat queue + platform health" width="100%">
 
-**Live threat queue + platform health**<br><sub>Both sources in one ThreatEvent v1 stream, with per-component health.</sub>
+**Live threat queue + platform health**<br><sub>Both sources in one ThreatEvent v1.1 stream, each row tagged with its MITRE ATT&CK technique.</sub>
 
 </td>
 <td width="50%" valign="top">
 
-<img src="docs/screenshots/features/08-campaign-injection.png" alt="Campaign injection" width="100%">
+<img src="docs/screenshots/features/09-campaign-injection.png" alt="Campaign injection" width="100%">
 
 **Campaign injection**<br><sub>Scripted attack packs written to the real log, so they travel the real ingest path.</sub>
 
@@ -189,16 +175,50 @@ All captured from the [live site](https://frankenstein-threat-command-center.onr
 <tr>
 <td width="50%" valign="top">
 
-<img src="docs/screenshots/features/09-ask-lumi.png" alt="Ask Lumi: executive questions and answers" width="100%">
+<img src="docs/screenshots/features/07-executive-brief.png" alt="Executive brief" width="100%">
+
+**Executive brief**<br><sub>CISO-ready summary quoting ATT&CK IDs; always matches the gauge's posture.</sub>
+
+</td>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/08-playbook.png" alt="Recommendations and playbook" width="100%">
+
+**Recommendations & playbook**<br><sub>Named playbook with a tactic-specific action (e.g. Initial Access → WAF virtual patching) and focal-event analysis.</sub>
+
+</td>
+</tr>
+<tr>
+<td colspan="2" width="100%" valign="top">
+
+<img src="docs/screenshots/features/11-containment.png" alt="After Contain" width="100%">
+
+**After Contain**<br><sub>AttackSim stopped, status CONTAINED, the landscape decays and the alarm clears.</sub>
+
+</td>
+</tr>
+<tr>
+<td colspan="2" width="100%" valign="top">
+
+<img src="docs/screenshots/features/12-globe-contained.png" alt="Attack map after Contain" width="100%">
+
+**Attack map after Contain**<br><sub>Arcs halted, a shield ring around the protected region.</sub>
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/10-ask-lumi.png" alt="Ask Lumi: executive questions and answers" width="100%">
 
 **Ask Lumi: executive Q&A**<br><sub>Free-form questions answered from current telemetry only (template or LLM).</sub>
 
 </td>
 <td width="50%" valign="top">
 
-<p align="center"><img src="docs/screenshots/features/11-mobile.png" alt="Mobile" width="72%"></p>
+<p align="center"><img src="docs/screenshots/features/13-mobile.png" alt="Mobile" width="72%"></p>
 
-**Mobile**<br><sub>Single-column layout; floating controls stay clear of the content.</sub>
+**Mobile**<br><sub>Single-column layout with the alarm strip; floating controls stay clear of content.</sub>
 
 </td>
 </tr>
