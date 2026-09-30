@@ -110,8 +110,6 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 
 ### Feature gallery
 
-All captured from the [live site](https://frankenstein-threat-command-center.onrender.com) at 2× resolution. Click any image to open it at full size.
-
 #### Palo Alto branded intro
 
 Problem, approach and reference architecture, with a narrated voice overview and the tech stack.
@@ -183,12 +181,6 @@ Arcs halted, with shield rings around the protected regions.
 Free-form questions answered from current telemetry only (template or LLM).
 
 <p align="center"><a href="docs/screenshots/features/10-ask-lumi.png"><img src="docs/screenshots/features/10-ask-lumi.png" alt="Ask Lumi: executive QandA" width="52%"></a></p>
-
-#### Mobile
-
-Single-column layout with the alarm strip; floating controls stay clear of the content.
-
-<p align="center"><a href="docs/screenshots/features/13-mobile.png"><img src="docs/screenshots/features/13-mobile.png" alt="Mobile" width="40%"></a></p>
 
 ---
 
