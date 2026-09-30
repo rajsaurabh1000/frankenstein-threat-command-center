@@ -110,119 +110,85 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 
 ### Feature gallery
 
-All captured from the [live site](https://frankenstein-threat-command-center.onrender.com) at 2× resolution.
+All captured from the [live site](https://frankenstein-threat-command-center.onrender.com) at 2× resolution. Click any image to open it at full size.
 
-<table>
-<tr>
-<td width="50%" valign="top">
+#### Palo Alto branded intro
 
-<img src="docs/screenshots/features/01-lumi-intro.png" alt="Palo Alto branded intro" width="100%">
+Problem, approach and reference architecture, with a narrated voice overview and the tech stack.
 
-**Palo Alto branded intro**<br><sub>Problem, approach and reference architecture, with a narrated voice overview and the tech stack.</sub>
+<a href="docs/screenshots/features/01-lumi-intro.png"><img src="docs/screenshots/features/01-lumi-intro.png" alt="Palo Alto branded intro" width="100%"></a>
 
-</td>
-<td width="50%" valign="top">
+#### 27-step voice walkthrough
 
-<img src="docs/screenshots/features/02-guided-tour.png" alt="Guided voice walkthrough" width="100%">
+Lumi spotlights every surface (shown: the Global attack map step), then runs inject → alarm → contain on its own.
 
-**27-step voice walkthrough**<br><sub>Spotlights every surface, including the new ones (shown: the Global attack map step); Lumi then runs inject → alarm → contain on its own.</sub>
+<a href="docs/screenshots/features/02-guided-tour.png"><img src="docs/screenshots/features/02-guided-tour.png" alt="27-step voice walkthrough" width="100%"></a>
 
-</td>
-</tr>
-<tr>
-<td colspan="2" width="100%" valign="top">
+#### Critical-zone alarm
 
-<img src="docs/screenshots/features/03-critical-alarm.png" alt="Critical-zone alarm" width="100%">
+Starts instantly when the landscape is critical: flashing strip, siren, timer, pulsing containment buttons, threat meter at 85/100.
 
-**Critical-zone alarm**<br><sub>Instant on a critical landscape: flashing strip, siren, timer, pulsing containment, threat meter at 85/100.</sub>
+<a href="docs/screenshots/features/03-critical-alarm.png"><img src="docs/screenshots/features/03-critical-alarm.png" alt="Critical-zone alarm" width="100%"></a>
 
-</td>
-</tr>
-<tr>
-<td colspan="2" width="100%" valign="top">
+#### 3D attack globe
 
-<img src="docs/screenshots/features/04-attack-globe.png" alt="3D attack globe" width="100%">
+Arcs fly to the region of the asset each event targeted (web tier in Oregon, legacy core in N. Virginia); protected regions, and top origins with their dominant ATT&CK technique.
 
-**3D attack globe**<br><sub>Arcs fly to the region of the asset each event targeted (web tier in Oregon, legacy core in N. Virginia); protected regions, top origins with their dominant ATT&CK technique.</sub>
+<a href="docs/screenshots/features/04-attack-globe.png"><img src="docs/screenshots/features/04-attack-globe.png" alt="3D attack globe" width="100%"></a>
 
-</td>
-</tr>
-<tr>
-<td colspan="2" width="100%" valign="top">
+#### Interactive analytics
 
-<img src="docs/screenshots/features/05-analytics-hover.png" alt="Interactive analytics" width="100%">
+Hover a donut slice: it pops out, the centre shows its share and count, and the caption adds the ATT&CK ID.
 
-**Interactive analytics**<br><sub>Hover a donut slice: it pops out, the centre shows its share and count, the caption adds the ATT&CK ID.</sub>
+<a href="docs/screenshots/features/05-analytics-hover.png"><img src="docs/screenshots/features/05-analytics-hover.png" alt="Interactive analytics" width="100%"></a>
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+#### Executive brief
 
-<img src="docs/screenshots/features/06-live-threat-queue.png" alt="Live threat queue + platform health" width="100%">
+CISO-ready summary quoting ATT&CK IDs; it always matches the gauge's posture.
 
-**Live threat queue + platform health**<br><sub>Both sources in one ThreatEvent v1.1 stream, each row tagged with its MITRE ATT&CK technique.</sub>
+<a href="docs/screenshots/features/07-executive-brief.png"><img src="docs/screenshots/features/07-executive-brief.png" alt="Executive brief" width="100%"></a>
 
-</td>
-<td width="50%" valign="top">
+#### Recommendations & playbook
 
-<img src="docs/screenshots/features/09-campaign-injection.png" alt="Campaign injection" width="100%">
+A named playbook with a tactic-specific action (e.g. Initial Access → WAF virtual patching) and focal-event analysis.
 
-**Campaign injection**<br><sub>Scripted attack packs written to the real log, so they travel the real ingest path.</sub>
+<a href="docs/screenshots/features/08-playbook.png"><img src="docs/screenshots/features/08-playbook.png" alt="Recommendations and playbook" width="100%"></a>
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+#### Live threat queue + platform health
 
-<img src="docs/screenshots/features/07-executive-brief.png" alt="Executive brief" width="100%">
+Both sources in one ThreatEvent v1.1 stream, each row tagged with its MITRE ATT&CK technique.
 
-**Executive brief**<br><sub>CISO-ready summary quoting ATT&CK IDs; always matches the gauge's posture.</sub>
+<p align="center"><a href="docs/screenshots/features/06-live-threat-queue.png"><img src="docs/screenshots/features/06-live-threat-queue.png" alt="Live threat queue + platform health" width="62%"></a></p>
 
-</td>
-<td width="50%" valign="top">
+#### Campaign injection
 
-<img src="docs/screenshots/features/08-playbook.png" alt="Recommendations and playbook" width="100%">
+Scripted attack packs written to the real log, so they travel the real ingest path.
 
-**Recommendations & playbook**<br><sub>Named playbook with a tactic-specific action (e.g. Initial Access → WAF virtual patching) and focal-event analysis.</sub>
+<p align="center"><a href="docs/screenshots/features/09-campaign-injection.png"><img src="docs/screenshots/features/09-campaign-injection.png" alt="Campaign injection" width="48%"></a></p>
 
-</td>
-</tr>
-<tr>
-<td colspan="2" width="100%" valign="top">
+#### After Contain
 
-<img src="docs/screenshots/features/11-containment.png" alt="After Contain" width="100%">
+AttackSim stopped, status CONTAINED, the alarm cleared and the landscape decaying.
 
-**After Contain**<br><sub>AttackSim stopped, status CONTAINED, the landscape decays and the alarm clears.</sub>
+<a href="docs/screenshots/features/11-containment.png"><img src="docs/screenshots/features/11-containment.png" alt="After Contain" width="100%"></a>
 
-</td>
-</tr>
-<tr>
-<td colspan="2" width="100%" valign="top">
+#### Attack map after Contain
 
-<img src="docs/screenshots/features/12-globe-contained.png" alt="Attack map after Contain" width="100%">
+Arcs halted, with shield rings around the protected regions.
 
-**Attack map after Contain**<br><sub>Arcs halted, a shield ring around the protected region.</sub>
+<a href="docs/screenshots/features/12-globe-contained.png"><img src="docs/screenshots/features/12-globe-contained.png" alt="Attack map after Contain" width="100%"></a>
 
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+#### Ask Lumi: executive Q&A
 
-<img src="docs/screenshots/features/10-ask-lumi.png" alt="Ask Lumi: executive questions and answers" width="100%">
+Free-form questions answered from current telemetry only (template or LLM).
 
-**Ask Lumi: executive Q&A**<br><sub>Free-form questions answered from current telemetry only (template or LLM).</sub>
+<p align="center"><a href="docs/screenshots/features/10-ask-lumi.png"><img src="docs/screenshots/features/10-ask-lumi.png" alt="Ask Lumi: executive QandA" width="52%"></a></p>
 
-</td>
-<td width="50%" valign="top">
+#### Mobile
 
-<p align="center"><img src="docs/screenshots/features/13-mobile.png" alt="Mobile" width="72%"></p>
+Single-column layout with the alarm strip; floating controls stay clear of the content.
 
-**Mobile**<br><sub>Single-column layout with the alarm strip; floating controls stay clear of content.</sub>
-
-</td>
-</tr>
-</table>
+<p align="center"><a href="docs/screenshots/features/13-mobile.png"><img src="docs/screenshots/features/13-mobile.png" alt="Mobile" width="40%"></a></p>
 
 ---
 
