@@ -12,6 +12,6 @@ def test_no_replacement_characters_in_text_files():
     corrupted = [
         f for f in files
         if Path(f).suffix.lower() not in BINARY
-        and "�" in (REPO / f).read_bytes().decode("utf-8", errors="replace")
+        and "\ufffd" in (REPO / f).read_bytes().decode("utf-8", errors="replace")
     ]
     assert corrupted == [], f"U+FFFD replacement characters found in: {corrupted}"
