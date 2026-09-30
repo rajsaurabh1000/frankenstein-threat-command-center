@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="dashboard/assets/palo-alto-networks-logo-light.png">
+    <source media="(prefers-color-scheme: light)" srcset="dashboard/assets/palo-alto-networks-logo-dark.png">
+    <img src="dashboard/assets/palo-alto-networks-logo-dark.png" alt="Palo Alto Networks" width="300">
+  </picture>
+</p>
+
 # Threat Command Center — Project Frankenstein 2.0
 
 > **Palo Alto Networks · Application Engineer Technical Challenge**
