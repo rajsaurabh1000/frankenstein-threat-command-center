@@ -180,7 +180,7 @@ Arcs halted, with shield rings around the protected regions.
 
 Free-form questions answered from current telemetry only (template or LLM).
 
-<p align="center"><a href="docs/screenshots/features/10-ask-lumi.png"><img src="docs/screenshots/features/10-ask-lumi.png" alt="Ask Lumi: executive QandA" width="52%"></a></p>
+<p align="center"><a href="docs/screenshots/features/10-ask-lumi.png"><img src="docs/screenshots/features/10-ask-lumi.png" alt="Ask Lumi: executive questions and answers" width="52%"></a></p>
 
 ---
 
