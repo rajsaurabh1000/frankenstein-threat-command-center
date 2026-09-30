@@ -108,15 +108,101 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 | **Architecture** | 40% | C# → Python → browser in one flow, with a **canonical `ThreatEvent` v1 contract**, source adapters, deterministic IDs, deduplication, explainable scoring, per-source health, WebSocket push, and a **closed response loop** back to PowerShell via a stop-flag file. See [§4](#4-architecture). |
 | **The Vibe** | 20% | AI tools generated the boilerplate (FastAPI scaffold, Vue shell, CSS, narration copy), while the parts that need judgment were designed by hand: the contract, scoring, dedup, and security boundaries. See [§14](#14-how-ai-tools-were-used-the-vibe). |
 
-### Screenshots
+### Feature gallery
 
-| Lumi AI Copilot intro (problem + architecture) | Command Center at CRITICAL posture |
-|---|---|
-| ![Lumi intro](docs/screenshots/copilot-intro-2x.png) | ![Critical posture](docs/screenshots/posture-critical-2x.png) |
+All captured from the [live site](https://frankenstein-threat-command-center.onrender.com) at 2× resolution.
 
-**Operations row:** live threat queue with per-source health, the executive brief and playbook, and campaign injection.
+<table>
+<tr>
+<td width="50%" valign="top">
 
-![Live threat queue, executive brief and playbook, campaign injection](docs/screenshots/operations-row.png)
+<img src="docs/screenshots/features/01-lumi-intro.png" alt="Lumi AI Copilot intro" width="100%">
+
+**Lumi AI Copilot intro**<br><sub>Problem, approach and the reference architecture, with a narrated voice overview.</sub>
+
+</td>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/02-guided-tour.png" alt="Guided voice walkthrough" width="100%">
+
+**Guided voice walkthrough**<br><sub>24 spotlighted steps across the console; Lumi can then run inject → contain on its own.</sub>
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/03-posture-critical.png" alt="Global posture: CRITICAL" width="100%">
+
+**Global posture: CRITICAL**<br><sub>Landscape gauge, headline, KPIs, and one-click containment.</sub>
+
+</td>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/10-containment.png" alt="After Contain" width="100%">
+
+**After Contain**<br><sub>AttackSim is stopped, status CONTAINED, the landscape decays.</sub>
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/06-executive-brief.png" alt="Executive brief" width="100%">
+
+**Executive brief**<br><sub>CISO-ready summary; always quotes the same posture as the gauge.</sub>
+
+</td>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/07-playbook.png" alt="Recommendations and playbook" width="100%">
+
+**Recommendations & playbook**<br><sub>Named playbook, three actions, focal-event analysis, confidence.</sub>
+
+</td>
+</tr>
+<tr>
+<td colspan="2" width="100%" valign="top">
+
+<img src="docs/screenshots/features/04-analytics.png" alt="Threat analytics" width="100%">
+
+**Threat analytics**<br><sub>Severity share, dominant vector, landscape trend, level mix, attack vectors, top actors.</sub>
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/05-live-threat-queue.png" alt="Live threat queue + platform health" width="100%">
+
+**Live threat queue + platform health**<br><sub>Both sources in one ThreatEvent v1 stream, with per-component health.</sub>
+
+</td>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/08-campaign-injection.png" alt="Campaign injection" width="100%">
+
+**Campaign injection**<br><sub>Scripted attack packs written to the real log, so they travel the real ingest path.</sub>
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+<img src="docs/screenshots/features/09-ask-lumi.png" alt="Ask Lumi: executive questions and answers" width="100%">
+
+**Ask Lumi: executive Q&A**<br><sub>Free-form questions answered from current telemetry only (template or LLM).</sub>
+
+</td>
+<td width="50%" valign="top">
+
+<p align="center"><img src="docs/screenshots/features/11-mobile.png" alt="Mobile" width="72%"></p>
+
+**Mobile**<br><sub>Single-column layout; floating controls stay clear of the content.</sub>
+
+</td>
+</tr>
+</table>
 
 ---
 
