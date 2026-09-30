@@ -114,6 +114,10 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 |---|---|
 | ![Lumi intro](docs/screenshots/lumi-intro.png) | ![Critical posture](docs/screenshots/command-center-critical.png) |
 
+**Operations row:** live threat queue with per-source health, the executive brief and playbook, and campaign injection.
+
+![Live threat queue, executive brief and playbook, campaign injection](docs/screenshots/operations-row.png)
+
 ---
 
 ## 4. Architecture
