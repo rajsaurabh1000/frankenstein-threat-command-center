@@ -97,6 +97,7 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 | 2c | **Global threat gauge** that turns red on high-severity hits | Posture gauge (LOW → ELEVATED → HIGH → **CRITICAL**) driven by a time-decayed landscape score. Every severity-9 hit from AttackSim flashes it **red** for 4 s | ✅ |
 | 3 | **"Sales Edge"** jaw-drop feature | **All three suggested examples:** an **AI Threat Brief** + playbook, a **Contain** button that actually stops the PowerShell script, and a live **3D attack globe**. Plus a critical-zone alarm, MITRE ATT&CK mapping, the **Lumi** voice-guided copilot and executive Q&A ("Ask Lumi") | ✅ |
 | 4 | **Public GitHub repository** | This repo | ✅ |
+| 5 | **Live demo** (beyond the brief) | [frankenstein-threat-command-center.onrender.com](https://frankenstein-threat-command-center.onrender.com): the full stack (ASP.NET, Python, PowerShell) in one container on Render | ✅ |
 
 ---
 
