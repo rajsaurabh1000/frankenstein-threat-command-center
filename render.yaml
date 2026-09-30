@@ -15,3 +15,5 @@ services:
         value: "false"   # public URL: keep AI in template mode so nobody can spend an API key
       - key: DEPLOY_ENV
         value: demo
+      - key: CONTROL_RATE_LIMIT
+        value: "20/60"   # per client IP: inject / contain / AI / TTS on the public URL

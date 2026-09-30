@@ -24,9 +24,10 @@ SCENARIO_PACKS: dict[ScenarioName, list[dict[str, int | str]]] = {
         {"type": "Brute Force", "severity": 7, "origin": "185.220.101.55"},
     ],
     "critical": [
+        # coordinated multi-region campaign: Asia-Pacific, Europe and the Americas converge on the target
         {"type": "SQL Injection", "severity": 10, "origin": "103.25.12.200"},
-        {"type": "SQL Injection", "severity": 9, "origin": "103.25.12.201"},
-        {"type": "Admin Escalation", "severity": 9, "origin": "103.25.12.202"},
+        {"type": "SQL Injection", "severity": 9, "origin": "185.220.101.77"},
+        {"type": "Admin Escalation", "severity": 9, "origin": "45.33.22.60"},
     ],
 }
 
@@ -41,6 +42,7 @@ def inject_scenario(log_path: Path, scenario: ScenarioName, clear_stop: bool, st
         for entry in entries:
             payload = {
                 "time": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+                "ts": datetime.now(timezone.utc).isoformat(),
                 "type": entry["type"],
                 "severity": entry["severity"],
                 "origin": entry.get("origin") or f"103.25.12.{random.randint(1, 254)}",

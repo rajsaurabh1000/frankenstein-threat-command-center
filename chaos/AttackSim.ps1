@@ -24,6 +24,7 @@ while ($true) {
 
     $logEntry = @{
         time   = Get-Date -Format "HH:mm:ss"
+        ts     = (Get-Date).ToUniversalTime().ToString("o")  # full ISO-8601 UTC; bridge prefers it
         type   = $randomAttack
         severity = $severity
         origin = "103.25.12.$(Get-Random -Minimum 1 -Maximum 255)"

@@ -46,3 +46,16 @@ def test_aspnet_row_maps_to_threat_event():
     assert legacy_row_to_event(
         {"Timestamp": "2026-09-30T00:47:55Z", "Source": "192.168.1.1", "Event": "Login Attempt", "Status": "Success"}
     ).raw_severity == 4
+
+
+def test_live_entry_prefers_full_iso_timestamp():
+    event = live_entry_to_event(
+        {"time": "01:02:03", "ts": "2026-09-30T01:02:03.4567890Z", "type": "Port Scan", "severity": 3, "origin": "1.2.3.4"}
+    )
+    assert event.timestamp.isoformat().startswith("2026-09-30T01:02:03")
+
+
+def test_live_entry_iso_with_offset_and_bad_iso_falls_back():
+    assert live_entry_to_event({"ts": "2026-09-30T06:32:03+05:30", "type": "Port Scan"}).timestamp.utcoffset().total_seconds() == 19800
+    fallback = live_entry_to_event({"ts": "not-a-date", "time": "01:02:03", "type": "Port Scan"})
+    assert fallback.timestamp.strftime("%H:%M:%S") == "01:02:03"

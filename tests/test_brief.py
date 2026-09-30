@@ -72,3 +72,15 @@ def test_containment_marker_is_not_listed_as_a_technique():
     asyncio.run(gen.force_refresh(events + [marker], ThreatLevel.HIGH, 62))
     assert "CONTAINMENT" not in gen.text and "SOC-CONSOLE" not in gen.text
     assert "SQL Injection" in gen.text
+
+
+def test_origin_cluster_prefers_external_addresses():
+    gen = BriefGenerator()
+    internal = [scored("Login Attempt", 4, 30, ThreatLevel.LOW) for _ in range(3)]
+    for item in internal:
+        item.event.source_ip = "192.168.1.1"
+    attacker = scored("SQL Injection", 10, 100, ThreatLevel.CRITICAL)
+    attacker.event.source_ip = "103.25.12.200"
+    asyncio.run(gen.force_refresh(internal + [attacker], ThreatLevel.CRITICAL, 85))
+    assert "103.25.12.200" in gen.text and "192.168.1.1" not in gen.text
+    assert any("103.25.12.200" in r for r in gen.insights.recommendations)

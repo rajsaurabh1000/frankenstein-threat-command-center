@@ -120,3 +120,32 @@ def test_contained_high_severity_hit_does_not_flash(monkeypatch):
     scorer.apply_containment(12.0)
     clock[0] += 13
     assert scorer.global_threat_level() is ThreatLevel.LOW
+
+
+def test_severity_flash_is_red_but_does_not_sound_the_alarm(monkeypatch):
+    import scorer as scorer_module
+
+    clock = [1000.0]
+    monkeypatch.setattr(scorer_module.time, "time", lambda: clock[0])
+    scorer = ThreatScorer()
+    for _ in range(4):
+        clock[0] += 2
+        scorer.score_event(make_event("Port Scan", 4))
+    clock[0] += 2
+    scorer.score_event(make_event("Brute Force", 9))  # AttackSim high-severity hit
+    assert scorer.global_threat_level() is ThreatLevel.CRITICAL  # gauge flashes red...
+    assert scorer.critical_alarm is False  # ...but it is a hit, not a critical landscape
+
+
+def test_critical_campaign_raises_the_alarm_immediately_and_containment_clears_it(monkeypatch):
+    import scorer as scorer_module
+
+    clock = [1000.0]
+    monkeypatch.setattr(scorer_module.time, "time", lambda: clock[0])
+    scorer = ThreatScorer()
+    for attack, sev in (("SQL Injection", 10), ("SQL Injection", 9), ("Admin Escalation", 9)):
+        scorer.score_event(make_event(attack, sev))
+    assert scorer.critical_alarm is True  # no delay: true on the very next state
+    scorer.apply_containment(12.0)
+    clock[0] += 13
+    assert scorer.critical_alarm is False

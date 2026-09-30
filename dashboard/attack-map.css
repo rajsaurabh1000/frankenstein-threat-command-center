@@ -1,0 +1,222 @@
+/* Global attack map: 3D globe (attack-globe.mjs) + origin leaderboard. */
+.attack-map {
+  margin: 1rem 0;
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+.attack-map-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.attack-map-head h2 {
+  margin: 0.15rem 0 0.2rem;
+}
+
+.attack-map-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.attack-map-sub strong {
+  color: #fdba74;
+  font-weight: 700;
+}
+
+.attack-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.attack-map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.attack-map-legend i {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.lvl-low { background: #3dd68c; }
+.lvl-elevated { background: #ffb020; }
+.lvl-high { background: #fa582d; }
+.lvl-critical { background: #ff4d4d; box-shadow: 0 0 6px rgba(255, 77, 77, 0.8); }
+
+.attack-map-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 290px);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.attack-map-stage {
+  position: relative;
+  min-height: 420px;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(250, 88, 45, 0.09), transparent 62%),
+    radial-gradient(ellipse at 50% 50%, #0b1120 0%, #04060a 70%);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.attack-globe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.attack-globe:active {
+  cursor: grabbing;
+}
+
+.attack-map-badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 214, 140, 0.55);
+  background: rgba(6, 40, 24, 0.85);
+  color: #bbf7d0;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.attack-map-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.attack-map-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.attack-map-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.attack-map-stats strong {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.attack-map-stats span {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.attack-map-h3 {
+  margin: 0.2rem 0 0;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.attack-map-origins {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attack-map-origin-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #e2e8f0;
+}
+
+.attack-map-origin-row em {
+  margin-left: 0.3rem;
+  font-style: normal;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.attack-map-bar {
+  height: 4px;
+  margin-top: 0.25rem;
+  border-radius: 2px;
+  background: rgba(148, 163, 184, 0.12);
+  overflow: hidden;
+}
+
+.attack-map-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #fa582d, #ff4d4d);
+  transition: width 0.4s ease;
+}
+
+.attack-map-empty {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.attack-map-note {
+  margin: auto 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  font-size: 0.64rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .attack-map-body {
+    grid-template-columns: 1fr;
+  }
+
+  .attack-map-head {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .attack-map-stage,
+  .attack-globe {
+    min-height: 320px;
+  }
+}

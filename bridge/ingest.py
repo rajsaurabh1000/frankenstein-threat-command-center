@@ -35,6 +35,27 @@ def parse_log_chunk(chunk: str) -> list[dict[str, Any]]:
     return objects
 
 
+def _parse_live_timestamp(data: dict[str, Any]) -> datetime:
+    """Prefer the full ISO-8601 `ts` (AttackSim writes it); fall back to the original HH:mm:ss
+    `time` field, which carries no date, so it is taken as today in UTC."""
+    iso = data.get("ts")
+    if iso:
+        try:
+            text = str(iso).replace("Z", "+00:00")
+            text = re.sub(r"(\.\d{6})\d+", r"\1", text)  # .NET "o" has 7 fraction digits; Python wants <= 6
+            parsed = datetime.fromisoformat(text)
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    today = datetime.now(timezone.utc).date()
+    try:
+        return datetime.strptime(str(data.get("time", "")), "%H:%M:%S").replace(
+            year=today.year, month=today.month, day=today.day, tzinfo=timezone.utc
+        )
+    except ValueError:
+        return datetime.now(timezone.utc)
+
+
 def live_entry_to_event(data: dict[str, Any]) -> ThreatEvent | None:
     try:
         severity = int(data.get("severity", 5))
@@ -42,14 +63,7 @@ def live_entry_to_event(data: dict[str, Any]) -> ThreatEvent | None:
     except (TypeError, ValueError):
         severity = 5
 
-    time_str = str(data.get("time", ""))
-    today = datetime.now(timezone.utc).date()
-    try:
-        ts = datetime.strptime(time_str, "%H:%M:%S").replace(
-            year=today.year, month=today.month, day=today.day, tzinfo=timezone.utc
-        )
-    except ValueError:
-        ts = datetime.now(timezone.utc)
+    ts = _parse_live_timestamp(data)
 
     attack_type = str(data.get("type", "Unknown"))
     source_ip = str(data.get("origin", "0.0.0.0"))

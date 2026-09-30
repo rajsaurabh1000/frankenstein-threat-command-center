@@ -26,6 +26,7 @@ LANDSCAPE_PRIOR_WEIGHT = 2.0  # pseudo-events at risk 0 in the landscape's weigh
 SEVERITY_FLASH_SECONDS = 4.0
 SEVERITY_FLASH_MIN = 9
 SEVERITY_FLASH_SCORE = 80.0
+CRITICAL_THRESHOLD = 78.0
 
 LEGACY_EVENT_WEIGHTS: dict[str, float] = {
     "Login Attempt": 0.5,
@@ -66,18 +67,30 @@ class ThreatScorer:
 
     @property
     def global_score(self) -> float:
-        now = time.time()
+        return self._score(time.time())
+
+    @property
+    def critical_alarm(self) -> bool:
+        """True for a critical *landscape*, not just a 4 s severity flash.
+
+        A single severity-9 hit flashes the gauge red (spec: the gauge turns red on high-severity
+        hits) but must not sound the alarm; a landscape that is CRITICAL on its own (e.g. an
+        injected campaign) must, immediately. Read-only: never touches the decay floor.
+        """
+        return self._score(time.time(), include_flash=False, update_floor=False) >= CRITICAL_THRESHOLD
+
+    def _score(self, now: float, include_flash: bool = True, update_floor: bool = True) -> float:
         # Events observed before containment are treated as contained: they fade out over the
         # containment window and then stop counting, so the gauge can't snap back to CRITICAL
         # once the window ends. Activity after containment (a new inject) counts normally.
-        post = self._compute_landscape(now, since=self._contained_at)
+        post = self._compute_landscape(now, since=self._contained_at, include_flash=include_flash)
         if now < self._contained_until:
             remaining = self._contained_until - now
             decay_factor = remaining / 12.0
-            return max(post, self._compute_landscape(now) * decay_factor)
+            return max(post, self._compute_landscape(now, include_flash=include_flash) * decay_factor)
 
         landscape = post
-        if landscape < self._global_floor:
+        if update_floor and landscape < self._global_floor:
             self._global_floor = max(0.0, self._global_floor - 0.5)
         return max(landscape, self._global_floor)
 
@@ -89,7 +102,7 @@ class ThreatScorer:
     def global_threat_level(self) -> ThreatLevel:
         return self._landscape_level(self.global_score)
 
-    def _compute_landscape(self, now: float, since: float = 0.0) -> float:
+    def _compute_landscape(self, now: float, since: float = 0.0, include_flash: bool = True) -> float:
         window_seconds = 120.0
         weighted_sum = 0.0
         weight_total = 0.0
@@ -122,7 +135,7 @@ class ThreatScorer:
         score = base + diversity_bonus + frequency_bonus
         if peak >= 85:
             score = max(score, peak * 0.85)
-        flash = any(
+        flash = include_flash and any(
             sev >= SEVERITY_FLASH_MIN and now - ts <= SEVERITY_FLASH_SECONDS and ts > since
             for ts, _, _, sev in self._landscape
         )
@@ -143,7 +156,7 @@ class ThreatScorer:
 
     @staticmethod
     def _landscape_level(global_score: float) -> ThreatLevel:
-        if global_score >= 78:
+        if global_score >= CRITICAL_THRESHOLD:
             return ThreatLevel.CRITICAL
         if global_score >= 58:
             return ThreatLevel.HIGH

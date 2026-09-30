@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -18,6 +18,9 @@ from health import HealthMonitor
 from ingest import LegacyPoller, LogTailer
 from narration import get_narration_mp3, normalize_text, text_digest, tts_available
 from narration_scripts import COPILOT_INTRO, NARRATION_TOUR
+from guard import control_guard
+from geo import enrich as enrich_geo, target_location
+from mitre import enrich as enrich_attack_technique
 from models import (
     AiInsights,
     BriefResponse,
@@ -25,6 +28,7 @@ from models import (
     ExecutiveAskRequest,
     ExecutiveAskResponse,
     NarrationSpeakRequest,
+    SCHEMA_VERSION,
     ScenarioRequest,
     ScoredEvent,
     TelemetrySource,
@@ -93,7 +97,7 @@ async def ingest_pipeline(events: list[ThreatEvent]) -> None:
     for event in events:
         if deduplicator.is_duplicate(event.event_id):
             continue
-        accepted.append(event)
+        accepted.append(enrich_geo(enrich_attack_technique(event)))  # enrichment: ATT&CK + origin geo
 
     if not accepted:
         return
@@ -111,6 +115,7 @@ async def ingest_pipeline(events: list[ThreatEvent]) -> None:
                     "threat_level": scored.threat_level.value,
                     "global_score": round(scorer.global_score, 1),
                     "global_threat_level": scorer.global_threat_level().value,
+                    "critical_alarm": scorer.critical_alarm,
                 },
             }
         )
@@ -157,6 +162,7 @@ def build_state() -> ThreatState:
         containment_status="CONTAINED" if contained_flag else "ACTIVE",
         event_count=len(recent_scored),
         health=health.snapshot(),
+        critical_alarm=scorer.critical_alarm,
     )
 
 
@@ -207,6 +213,8 @@ async def background_ingest() -> None:
 
 @app.on_event("startup")
 async def on_startup() -> None:
+    global _stop_background
+    _stop_background = False  # a restart in the same process (e.g. test clients) must resume ingest
     _sync_ai_health()
     asyncio.create_task(background_ingest())
 
@@ -226,12 +234,13 @@ async def get_platform() -> dict:
         "product": "Threat Command Center",
         "edition": "Unified Telemetry Platform",
         "version": os.environ.get("TCC_VERSION", "1.0.0"),
-        "schema_version": "1.0",
+        "schema_version": SCHEMA_VERSION,
         "environment": deploy_env,
         "region": region,
         "tenant": tenant,
         "build": os.environ.get("TCC_BUILD", "release"),
         "codename": "Project Frankenstein",
+        "geo_target": target_location(region).model_dump(),
         "ai": {
             "llm_configured": brief_gen.llm_active,
             "model": brief_gen.model_name,
@@ -264,7 +273,7 @@ async def get_narration_intro() -> dict:
     return COPILOT_INTRO
 
 
-@app.post("/api/narration/speak")
+@app.post("/api/narration/speak", dependencies=[Depends(control_guard)])
 async def narration_speak(body: NarrationSpeakRequest) -> Response:
     if not tts_available():
         return Response(status_code=503, content="TTS not available on server")
@@ -308,7 +317,7 @@ async def get_ai_insights() -> AiInsights:
     return brief_gen.insights
 
 
-@app.post("/api/ai/brief/regenerate")
+@app.post("/api/ai/brief/regenerate", dependencies=[Depends(control_guard)])
 async def regenerate_brief() -> BriefResponse:
     await brief_gen.force_refresh(
         list(recent_scored),
@@ -325,7 +334,7 @@ async def regenerate_brief() -> BriefResponse:
     )
 
 
-@app.post("/api/ai/ask")
+@app.post("/api/ai/ask", dependencies=[Depends(control_guard)])
 async def executive_ask(body: ExecutiveAskRequest) -> ExecutiveAskResponse:
     answer, mode = await brief_gen.answer_executive(
         body.question,
@@ -340,7 +349,7 @@ async def executive_ask(body: ExecutiveAskRequest) -> ExecutiveAskResponse:
     )
 
 
-@app.post("/api/demo/scenario")
+@app.post("/api/demo/scenario", dependencies=[Depends(control_guard)])
 async def run_demo_scenario(body: ScenarioRequest) -> dict:
     count = inject_scenario(LOG_PATH, body.scenario, clear_stop=True, stop_path=STOP_PATH)
     contained_flag_local = False
@@ -356,12 +365,12 @@ async def run_demo_scenario(body: ScenarioRequest) -> dict:
     }
 
 
-@app.post("/api/contain")
+@app.post("/api/contain", dependencies=[Depends(control_guard)])
 async def contain_threat() -> ContainResponse:
     return await _execute_containment()
 
 
-@app.post("/api/mitigate")
+@app.post("/api/mitigate", dependencies=[Depends(control_guard)])
 async def mitigate_legacy_alias() -> ContainResponse:
     return await _execute_containment()
 

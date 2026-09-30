@@ -1,0 +1,216 @@
+/*
+ * Threat landscape meter (Posture deck). Semicircle with the bridge's real zone thresholds
+ * (LOW <35, ELEVATED 35-58, HIGH 58-78, CRITICAL >=78), a needle on the live score, a
+ * 60 s change indicator and a labelled 2-minute trend with the CRITICAL threshold marked.
+ */
+.threat-meter {
+  --tm-low: #3dd68c;
+  --tm-elevated: #ffb020;
+  --tm-high: #fa582d;
+  --tm-critical: #ff5c5c;
+  --tm-accent: var(--tm-low);
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem 1.05rem;
+  text-align: left;
+}
+
+.threat-meter--elevated { --tm-accent: var(--tm-elevated); }
+.threat-meter--high { --tm-accent: var(--tm-high); }
+.threat-meter--critical { --tm-accent: var(--tm-critical); }
+
+.threat-meter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.threat-meter-title {
+  font-family: var(--font-heading);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.threat-meter-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.threat-meter-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tm-accent);
+  box-shadow: 0 0 0 0 var(--tm-accent);
+  animation: tm-live 1.8s ease-out infinite;
+}
+
+@keyframes tm-live {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tm-accent) 70%, transparent); }
+  100% { box-shadow: 0 0 0 7px transparent; }
+}
+
+.threat-meter-dial {
+  position: relative;
+  width: min(300px, 100%);
+  margin: 0.2rem auto 0;
+}
+
+.threat-meter-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.tm-track,
+.tm-lit {
+  fill: none;
+  stroke-width: 14;
+  stroke-linecap: butt;
+}
+
+.tm-track { opacity: 0.16; }
+
+.tm-zone--low { stroke: var(--tm-low); }
+.tm-zone--elevated { stroke: var(--tm-elevated); }
+.tm-zone--high { stroke: var(--tm-high); }
+.tm-zone--critical { stroke: var(--tm-critical); }
+
+.threat-meter--critical .tm-lit.tm-zone--critical {
+  filter: drop-shadow(0 0 6px rgba(255, 92, 92, 0.75));
+}
+
+.tm-tick {
+  stroke: rgba(226, 232, 240, 0.55);
+  stroke-width: 1.2;
+}
+
+.tm-tick-label,
+.tm-end-label {
+  fill: #64748b;
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.tm-needle {
+  stroke: #f8fafc;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.tm-marker {
+  fill: #0a0a0a;
+  stroke: var(--tm-accent);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--tm-accent) 80%, transparent));
+}
+
+.threat-meter-readout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.tm-score {
+  font-family: var(--font-heading);
+  font-size: clamp(2.2rem, 4.2vw, 2.85rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #f8fafc;
+}
+
+.tm-score small {
+  margin-left: 0.15rem;
+  font-size: 0.34em;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #64748b;
+}
+
+.tm-level {
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--tm-accent);
+  background: color-mix(in srgb, var(--tm-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tm-accent) 45%, transparent);
+}
+
+.threat-meter-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.tm-delta {
+  align-self: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.tm-delta--up { color: var(--tm-critical); }
+.tm-delta--down { color: var(--tm-low); }
+
+.tm-trend svg {
+  display: block;
+  width: 100%;
+  height: 40px;
+}
+
+.tm-trend-area { fill: color-mix(in srgb, var(--tm-accent) 16%, transparent); }
+
+.tm-trend-line {
+  fill: none;
+  stroke: var(--tm-accent);
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.tm-trend-crit {
+  stroke: var(--tm-critical);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.55;
+  vector-effect: non-scaling-stroke;
+}
+
+.tm-trend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.tm-trend-crit-label { color: color-mix(in srgb, var(--tm-critical) 75%, #64748b); }
+
+@media (prefers-reduced-motion: reduce) {
+  .threat-meter-live i { animation: none; }
+}

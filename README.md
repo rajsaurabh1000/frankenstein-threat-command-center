@@ -95,7 +95,7 @@ Then open **http://127.0.0.1:8000** (the script opens it automatically on macOS)
 | 2a | **Command Center (HTML5/JS)** — dark-mode, "hacker-chic" | [`dashboard/`](dashboard/) — Vue 3 ESM, no build step | ✅ |
 | 2b | **Live Feed** of incoming threats | WebSocket `/ws/threats` → Telemetry queue | ✅ |
 | 2c | **Global threat gauge** that turns red on high-severity hits | Posture gauge (LOW → ELEVATED → HIGH → **CRITICAL**) driven by a time-decayed landscape score. Every severity-9 hit from AttackSim flashes it **red** for 4 s | ✅ |
-| 3 | **"Sales Edge"** jaw-drop feature | **All three suggested examples, plus one more:** AI Threat Brief + playbook, **Contain** button that actually stops the PowerShell script, **Lumi** voice-guided AI copilot, and executive Q&A ("Ask Lumi") | ✅ |
+| 3 | **"Sales Edge"** jaw-drop feature | **All three suggested examples:** an **AI Threat Brief** + playbook, a **Contain** button that actually stops the PowerShell script, and a live **3D attack globe**. Plus a critical-zone alarm, MITRE ATT&CK mapping, the **Lumi** voice-guided copilot and executive Q&A ("Ask Lumi") | ✅ |
 | 4 | **Public GitHub repository** | This repo | ✅ |
 
 ---
@@ -226,6 +226,7 @@ flowchart LR
     tailer["LogTailer<br/>(byte-offset tail, 350ms)"]
     adapters["Adapters →<br/>ThreatEvent v1"]
     dedup["Deduplicator<br/>(sha256 event_id, TTL)"]
+    attck["Enrichment<br/>MITRE ATT&CK + origin geo"]
     scorer["ThreatScorer<br/>event risk + global landscape"]
     brief["BriefGenerator<br/>template or LLM"]
     health["HealthMonitor"]
@@ -239,7 +240,7 @@ flowchart LR
   log --> tailer
   poller --> adapters
   tailer --> adapters
-  adapters --> dedup --> scorer
+  adapters --> dedup --> attck --> scorer
   scorer --> brief
   scorer --> ws
   brief --> ws
@@ -261,12 +262,13 @@ The same topology as it ships inside the product (Lumi's intro modal renders thi
 2. **Ingest.** The bridge runs two concurrent asyncio loops:
    - `LogTailer` reads only the new bytes past its last file offset, every 350 ms.
    - `LegacyPoller` calls the legacy API every 5 s.
-3. **Normalize.** Source-specific adapters (`live_entry_to_event`, `legacy_row_to_event`) map each raw shape to the canonical **`ThreatEvent` v1** model. Pydantic validates it at this boundary.
+3. **Normalize.** Source-specific adapters (`live_entry_to_event`, `legacy_row_to_event`) map each raw shape to the canonical **`ThreatEvent`** model (contract v1.1). Pydantic validates it at this boundary.
 4. **Dedupe.** Each event gets a deterministic `event_id` (a SHA-256 of source, timestamp, attack, IP, and destination). A bounded TTL cache drops repeats, which makes at-least-once ingestion safe.
-5. **Score.** `ThreatScorer` assigns a per-event `risk_score` (0–100) and `threat_level`, and updates the time-decayed **global landscape score** that drives the gauge.
-6. **Enrich.** `BriefGenerator` refreshes the executive brief and playbook, throttled to at most once every 20 s unless forced. It uses an LLM when one is configured and otherwise falls back to a deterministic template.
-7. **Publish.** Everything is pushed to browsers over a single WebSocket (`/ws/threats`). Message types are `event`, `state`, `brief`, `health`, and `system`.
-8. **Respond.** **Contain** calls `POST /api/contain`. The bridge writes `data/.attack_stop`, AttackSim sees the flag on its next loop and exits, and the landscape score decays over about 12 s.
+5. **Enrich.** [`mitre.py`](bridge/mitre.py) tags each event with its MITRE ATT&CK technique (ID, name, tactic, reference URL), e.g. SQL Injection → **T1190** Exploit Public-Facing Application (Initial Access), the vocabulary SOC teams and XDR/XSIAM consoles use. [`geo.py`](bridge/geo.py) adds the origin location for the 3D attack map.
+6. **Score.** `ThreatScorer` assigns a per-event `risk_score` (0–100) and `threat_level`, updates the time-decayed **global landscape score** that drives the gauge, and raises `critical_alarm` when the *landscape* is critical.
+7. **Brief.** `BriefGenerator` refreshes the executive brief and playbook, quoting ATT&CK IDs and adding a tactic-specific response. It regenerates immediately on a posture change and is otherwise throttled to once every 20 s. It uses an LLM when one is configured and otherwise a deterministic template.
+8. **Publish.** Everything is pushed to browsers over a single WebSocket (`/ws/threats`). Message types are `event`, `state`, `brief`, `health`, and `system`.
+9. **Respond.** **Contain** calls `POST /api/contain`. The bridge writes `data/.attack_stop`, AttackSim sees the flag on its next loop and exits, and the landscape score decays over about 12 s.
 
 **Adding a new telemetry source only means writing one adapter that emits `ThreatEvent`.** Scoring, the brief, and the UI stay the same.
 
@@ -307,7 +309,10 @@ Same attack generator as the brief (Brute Force / SQL Injection / Port Scan / Cr
 | [`ingest.py`](bridge/ingest.py) | `LogTailer` (offset-based tail; tolerant parser that pulls JSON objects out of partial or concatenated writes) and `LegacyPoller` (HTTP poll + bootstrap/jitter handling), plus the two source adapters |
 | [`models.py`](bridge/models.py) | Pydantic models: `ThreatEvent`, `ScoredEvent`, `ThreatState`, `SystemHealth`, `AiInsights`, request/response DTOs |
 | [`dedup.py`](bridge/dedup.py) | Deterministic `event_id` + bounded, TTL-evicting `EventDeduplicator` (2 000 entries / 1 h) |
-| [`scorer.py`](bridge/scorer.py) | Per-event risk scoring and the time-decayed global landscape score (see [§7](#7-scoring-model)) |
+| [`mitre.py`](bridge/mitre.py) | MITRE ATT&CK enrichment stage: attack type → technique ID, name, tactic, URL; tactic-specific response guidance for the playbook |
+| [`geo.py`](bridge/geo.py) | Origin geolocation enrichment for the attack map: address range → location (illustrative for the simulated IPs), internal-network detection, and the protected target from the tenant region |
+| [`scorer.py`](bridge/scorer.py) | Per-event risk scoring, the time-decayed global landscape score, and the `critical_alarm` signal (see [§7](#7-scoring-model)) |
+| [`guard.py`](bridge/guard.py) | Control-plane guard on state-changing endpoints: per-client rate limit and an optional operator token |
 | [`brief.py`](bridge/brief.py) | Executive brief, playbook, recommendations, and executive Q&A. Uses the OpenAI Chat Completions API when a key is set and a deterministic template otherwise |
 | [`health.py`](bridge/health.py) | Per-component health: Legacy API, Live Telemetry, Analytics Bridge, WebSocket, AI Enrichment |
 | [`scenario.py`](bridge/scenario.py) | Scripted attack packs (`normal`, `port_scan`, `brute_force`, `critical`) appended to the same log file, so injected events travel the **real** ingest path |
@@ -321,6 +326,11 @@ Same attack generator as the brief (Brute Force / SQL Injection / Port Scan / Cr
   - **Telemetry:** live SOC queue with per-source health.
   - **Intelligence:** executive brief, playbook, recommendations.
   - **Response:** inject scenarios and contain.
+- **Threat landscape meter:** a semicircle with the real zone thresholds (LOW / ELEVATED 35 / HIGH 58 / CRITICAL 78), a needle on the live score, a 60 s change indicator and a labelled 2-minute trend.
+- **Critical-zone alarm:** the moment the landscape is critical, a flashing alarm strip, a continuous siren, pulsing containment buttons and a `⚠ CRITICAL` tab title. **Acknowledge** snoozes it for 15 s; **Contain** ends it (see [§8](#8-the-sales-edge-features)).
+- **Interactive analytics:** hover or tap the Threat level and Attack vectors donuts for per-slice share, count and ATT&CK ID.
+- **MITRE ATT&CK chips** on every queue row, linking to the technique on attack.mitre.org.
+- **3D attack globe** ([`attack-globe.mjs`](dashboard/attack-globe.mjs)): a dot-matrix Earth drawn with Canvas 2D (no libraries) with live attack arcs to the protected region, plus a top-origins leaderboard (see [§8](#8-the-sales-edge-features)).
 - **Floating action dock** with **Inject**, **Brief**, and **Contain**, always one click away during a demo.
 - **Auto-reconnecting WebSocket.** After a reconnect the UI rehydrates from `GET /api/state`.
 - **Export Summary.** Downloads a posture and brief snapshot to hand to leadership.
@@ -334,7 +344,7 @@ Every source is normalized to this shape before anything downstream sees it ([`b
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `schema_version` | `str` | Contract version (`"1.0"`) |
+| `schema_version` | `str` | Contract version (`"1.1"`; 1.1 added the optional `technique`, backward compatible) |
 | `event_id` | `str` | Deterministic `evt-<sha256[:12]>` of source + timestamp + attack + IP + destination |
 | `timestamp` | `datetime` | Event time (UTC) |
 | `source` | enum | `legacy_api` \| `live_stream` \| `soc_console` |
@@ -344,6 +354,8 @@ Every source is normalized to this shape before anything downstream sees it ([`b
 | `status` | `str` | `Detected`, `Failed`, `Denied`, `Blocked`, `Contained`, … |
 | `raw_severity` | `int` 1–10 | Upstream severity (validated range) |
 | `metadata` | `dict` | Original raw payload + upstream tag (non-authoritative) |
+| `technique` | `object \| null` | MITRE ATT&CK technique added by the enrichment stage: `id`, `name`, `tactic`, `url` |
+| `geo` | `object \| null` | Origin location added by the enrichment stage: `city`, `country`, `lat`, `lon`, `internal`, `illustrative` |
 
 After scoring, clients also receive `risk_score` (0–100), `threat_level`, `global_score`, and `global_threat_level`.
 
@@ -353,7 +365,7 @@ After scoring, clients also receive `risk_score` (0–100), `threat_level`, `glo
 |-----------|--------------------------|-----------------|
 | `attack_type` | `type` | `Event` |
 | `source_ip` | `origin` | `Source` |
-| `timestamp` | `time` (`HH:mm:ss`, today UTC) | `Timestamp` (ISO-8601) |
+| `timestamp` | `ts` (full ISO-8601 UTC); falls back to the original `time` (`HH:mm:ss`) | `Timestamp` (ISO-8601) |
 | `status` | `"Detected"` | `Status` |
 | `raw_severity` | `severity` (clamped 1–10) | derived: `6` if Failed/Denied/Blocked, else `4` |
 | `destination` | `web-app-01` | `legacy-saas-core` |
@@ -365,7 +377,7 @@ After scoring, clients also receive `risk_score` (0–100), `threat_level`, `glo
   "type": "event",
   "payload": {
     "event": {
-      "schema_version": "1.0",
+      "schema_version": "1.1",
       "event_id": "evt-8f21a2c91b4d",
       "timestamp": "2026-09-29T16:44:32Z",
       "source": "live_stream",
@@ -374,12 +386,20 @@ After scoring, clients also receive `risk_score` (0–100), `threat_level`, `glo
       "destination": "web-app-01",
       "status": "Detected",
       "raw_severity": 9,
-      "metadata": { "upstream": "live_stream.log" }
+      "metadata": { "upstream": "live_stream.log" },
+      "technique": {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1190/"
+      },
+      "geo": { "city": "Hanoi", "country": "VN", "lat": 21.03, "lon": 105.85, "internal": false, "illustrative": true }
     },
     "risk_score": 90.0,
     "threat_level": "CRITICAL",
     "global_score": 81.4,
-    "global_threat_level": "CRITICAL"
+    "global_threat_level": "CRITICAL",
+    "critical_alarm": true
   }
 }
 ```
@@ -425,6 +445,17 @@ One critical hit from ten minutes ago should **not** pin the gauge red forever. 
 
 This is why a single severity-9 SQL Injection flips the gauge red immediately (the peak floor), and why it relaxes on its own once the attack stops (the decay).
 
+### 7.3 Critical alarm (`critical_alarm`)
+
+Two different things can make the gauge CRITICAL, and only one should sound a siren:
+
+| Situation | Gauge | `critical_alarm` |
+|-----------|-------|------------------|
+| A single severity-9 AttackSim hit (the 4 s severity flash) | red, then falls back | `false`: a hit, not a campaign |
+| The landscape itself ≥ 78 (e.g. an injected campaign) | CRITICAL | `true`, on the very next update |
+
+The bridge computes the landscape a second time **without** the severity flash; the alarm is raised when that score is still ≥ 78. Over 10 simulated minutes of AttackSim traffic the gauge is red about a quarter of the time with **zero** false alarms, while an Inject raises the alarm in under 100 ms.
+
 ---
 
 ## 8. The "Sales Edge" features
@@ -441,6 +472,20 @@ The brief asked for **one** jaw-drop feature. This build covers all three sugges
 - `POST /api/contain` writes `data/.attack_stop`. AttackSim checks for the file on every iteration and **exits**.
 - The bridge adds a `CONTAINMENT` event to the feed, marks the stream **STOPPED**, decays the landscape score, and forces a fresh brief.
 - **Inject** clears the flag again, so the demo can loop: inject → critical → contain → inject.
+
+### 🚨 Critical-zone alarm
+- Starts the moment `critical_alarm` is raised: a flashing strip ("Threat landscape in CRITICAL zone"), a timer, a shield-alert icon, pulsing **Initiate containment** buttons, a red-glowing posture panel and a `⚠ CRITICAL` browser-tab title.
+- A synthesized emergency-wail siren (WebAudio, no audio file) plays continuously. **Acknowledge** snoozes it for 15 s, after which it re-arms if the threat is still active; **Contain** stops everything. 🔔 mutes it, and it pauses while Lumi is speaking. Browsers require one click on the page before any audio can play.
+
+### 🌐 3D attack globe (the "3D map visualization")
+- A rotating dot-matrix Earth (Natural Earth land mask, pre-computed by [`scripts/generate_land_dots.py`](scripts/generate_land_dots.py) into a 36 KB file shipped with the app) rendered with an orthographic projection on Canvas 2D. No WebGL or libraries, 60 fps.
+- Every live event launches a great-circle arc from its origin to the protected region (the tenant's **us-west-2, Oregon**), coloured by threat level, with an origin pulse and an impact ripple. Internal (LAN) activity pulses at the target instead. **Contain** fades the arcs and draws a shield ring.
+- Drag to rotate; it eases back to a Pacific-centred view. The render loop pauses off-screen and in background tabs, and respects reduced motion.
+- A side panel shows attack origins, countries, internal events and a top-origins leaderboard.
+- **Honest by design:** the challenge's telemetry uses *simulated* addresses, so origins are placed by address range (APNIC 103.x → Asia-Pacific cities, 185.220.101.x → Frankfurt, …) and the UI labels positions as illustrative. A geo-IP service would plug into the same enrichment stage.
+
+### 🧭 MITRE ATT&CK mapping
+- Every event carries its ATT&CK technique; the queue shows it as a chip linking to attack.mitre.org, the brief quotes IDs ("SQL Injection [T1190]"), and the playbook adds a response matched to the dominant **tactic** (e.g. Initial Access → WAF virtual patching; Credential Access → MFA and lockout).
 
 ### 🤖 Lumi — AI Copilot guide with voice
 - On load, an intro modal presents the problem statement, how it's solved, and the reference architecture diagram.
@@ -462,7 +507,7 @@ All endpoints are served by the bridge on `http://127.0.0.1:8000`. Interactive O
 |--------|------|---------|
 | `GET` | `/` | Command Center UI |
 | `WS` | `/ws/threats` | Live push: `event`, `state`, `brief`, `health`, `system` messages. Sends a full `state` + `brief` on connect |
-| `GET` | `/api/state` | Full snapshot: global score/level, recent scored events, containment status, health |
+| `GET` | `/api/state` | Full snapshot: global score/level, `critical_alarm`, recent scored events, containment status, health |
 | `GET` | `/api/health` | Per-component health |
 | `GET` | `/api/brief` | Current executive brief (text + mode + insights) |
 | `GET` | `/api/ai/insights` | Playbook, recommendations, confidence, focal insight |
@@ -474,6 +519,8 @@ All endpoints are served by the bridge on `http://127.0.0.1:8000`. Interactive O
 | `GET` | `/api/platform` | Console metadata (env, region, tenant, version) |
 | `GET` | `/api/narration/intro`, `/api/narration/tour` | Lumi narration scripts |
 | `POST` | `/api/narration/speak` | Text → cached neural-voice MP3 |
+
+State-changing endpoints (`/api/contain`, `/api/mitigate`, `/api/demo/scenario`, `/api/ai/ask`, `/api/ai/brief/regenerate`, `/api/narration/speak`) go through the control-plane guard: over the per-client rate limit they return **429** with `Retry-After`, and when `CONTROL_TOKEN` is set they require an `X-Control-Token` header (**401** otherwise). The dashboard only updates on success and tells the operator when an action is refused.
 
 ### Try it from the terminal
 
@@ -508,6 +555,8 @@ Copy `.env.example` to `.env` (it is git-ignored). `start-demo.sh` loads it auto
 | `DATA_DIR` | `<repo>/data` | Location of `live_stream.log`, the stop flag, and the narration cache |
 | `DASHBOARD_DIR` | `<repo>/dashboard` | Static UI directory served by the bridge |
 | `EDGE_TTS_VOICE` | `en-US-JennyNeural` | Voice for Lumi narration |
+| `CONTROL_RATE_LIMIT` | `30/60` | Control actions allowed per client per window (`20/60` on the public URL); `off` disables |
+| `CONTROL_TOKEN` | *(empty)* | When set, control actions require the `X-Control-Token` header |
 | `DEPLOY_ENV`, `TCC_REGION`, `TCC_TENANT`, `TCC_VERSION`, `TCC_BUILD` | `enterprise`, `us-west-2`, `primary`, `1.0.0`, `release` | Cosmetic console metadata shown in the header / exports |
 
 ### Running components individually
@@ -559,8 +608,9 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the test suite 
 - **Validation at the boundary.** Every upstream payload passes through Pydantic (`raw_severity` is range-checked, types are coerced) before scoring.
 - **Fixed filesystem paths.** The log, stop flag, and cache live under `DATA_DIR`, and no request can supply a path.
 - **Loopback only.** Both services bind to `127.0.0.1`. The UI is same-origin with the bridge, and legacy CORS is restricted to the bridge origin.
-- **Data minimization for the LLM.** Only the last 12 normalized events, reduced to type, IP, severity, risk, and level, are sent. Raw payloads and metadata are never sent.
+- **Data minimization for the LLM.** Only the last 12 normalized events, reduced to type (with its ATT&CK ID), IP, severity, risk, and level, are sent. Raw payloads and metadata are never sent.
 - **XSS-safe rendering.** Vue text bindings escape by default.
+- **Control-plane guard.** Inject / Contain / AI / text-to-speech are rate-limited per client (real client IP behind the proxy), with an optional operator token compared in constant time. The public demo stays clickable but can't be hammered.
 - **Containment is a demo control.** It writes a local stop flag and is not production enforcement. In production this hook would call a firewall or EDR API (e.g. PAN-OS / Cortex XSOAR).
 
 ---
@@ -625,14 +675,16 @@ frankenstein-threat-command-center/
 │   ├── index.html
 │   ├── app.mjs              #   UI, WebSocket client, tour, copilot
 │   ├── narration.mjs        #   audio playback / autoplay handling
+│   ├── attack-globe.mjs     #   3D attack globe (Canvas 2D, no libraries)
 │   ├── architecture-diagram.mjs
 │   ├── *.css                #   themes, layout, motion
 │   ├── vendor/vue.esm-browser.js
-│   └── assets/              #   logos, architecture SVG, Lumi, pre-generated narration MP3s
+│   └── assets/              #   logos, architecture SVG, Lumi, narration MP3s, geo/land-dots.json
 ├── tests/                   # pytest: scorer, dedup, adapters, API end to end
 ├── deploy/                  # all-in-one Dockerfile + entrypoint for hosted demos (render.yaml at root)
 ├── scripts/
 │   ├── start-demo.sh        # one-command local demo
+│   ├── generate_land_dots.py # Natural Earth land mask -> globe dots
 │   ├── generate-narration.sh
 │   └── generate_narration.py
 ├── data/                    # runtime: live_stream.log, .attack_stop (git-ignored)
@@ -645,7 +697,7 @@ frankenstein-threat-command-center/
 
 ## 16. Tests
 
-A focused `pytest` suite (33 tests, under a second) covers the parts that carry the architecture:
+A `pytest` suite (56 tests, about 1.5 s) plus a browser smoke test covers the parts that carry the architecture:
 
 | File | What it proves |
 |------|----------------|
@@ -654,12 +706,22 @@ A focused `pytest` suite (33 tests, under a second) covers the parts that carry 
 | [`tests/test_dedup.py`](tests/test_dedup.py) | Deterministic, field-sensitive `event_id`s; a repeated observation is dropped; the cache is bounded |
 | [`tests/test_ingest.py`](tests/test_ingest.py) | JSON-lines, concatenated, and truncated log writes; PowerShell and ASP.NET payloads both map to `ThreatEvent` v1; severity clamping and defaults |
 | [`tests/test_api.py`](tests/test_api.py) | End to end through FastAPI: inject → real log-tail ingest → CRITICAL → contain writes the AttackSim stop flag; `/api/mitigate` alias; invalid scenarios rejected; template brief without an LLM |
+| [`tests/test_geo.py`](tests/test_geo.py) | Every scenario origin gets a valid location; AttackSim's range lands in Asia-Pacific deterministically; RFC 1918 / loopback are internal while RFC 5737 documentation ranges are external attackers; the target follows the tenant region |
+| [`tests/test_mitre.py`](tests/test_mitre.py) | Every attack type AttackSim, the legacy API and the scenario packs can emit maps to a well-formed ATT&CK technique; enrichment tags events and leaves unknown types alone |
+| [`tests/test_guard.py`](tests/test_guard.py) | Per-client rate limit returns 429 with `Retry-After`; clients don't share quotas; `X-Forwarded-For` resolves the real client; the optional token returns 401 without it |
+| [`tests/test_properties.py`](tests/test_properties.py) | Property-based (Hypothesis), over random events and streams: risk always 0–100, higher severity never lowers risk or level, the landscape stays in range, and `critical_alarm` always implies CRITICAL |
+| [`tests/test_ws_contract.py`](tests/test_ws_contract.py) | The real `/ws/threats` channel: `state` then `brief` on connect, and `event` messages carrying every field the dashboard relies on, including `technique` and `critical_alarm` |
+| [`tests/e2e/test_ui_smoke.py`](tests/e2e/test_ui_smoke.py) | Playwright in Chromium against the running stack: branded intro → Skip → Inject Critical Attack through the real buttons → gauge CRITICAL, alarm strip, tab title, globe arcs + origin leaderboard, ATT&CK chip → Contain → alarm cleared, map "Contained", no console errors. Runs in CI against the container |
 | [`tests/test_assets.py`](tests/test_assets.py) | No text file in the repo contains U+FFFD replacement characters (an encoding round-trip once replaced the diagram's `·` and `—` with them) |
 
 ```bash
 python3 -m venv .venv-test
 .venv-test/bin/pip install -r bridge/requirements.txt -r bridge/requirements-dev.txt
 .venv-test/bin/python -m pytest -q
+
+# browser smoke test against a running stack (installs Chromium once)
+.venv-test/bin/python -m playwright install chromium
+E2E_URL=http://127.0.0.1:8000 .venv-test/bin/python -m pytest tests/e2e -q
 ```
 
 Tests run against a temporary `DATA_DIR` with the LLM disabled, so they never touch your demo data or call an external API.
@@ -683,17 +745,20 @@ Tests run against a temporary `DATA_DIR` with the LLM disabled, so they never to
 ## 18. Known limitations & next steps
 
 **Limitations (scoped for a 24-hour demo)**
-- State lives in memory, so a bridge restart clears history (clients reconnect cleanly).
+- State lives in memory, so a bridge restart clears history (clients reconnect cleanly and the live stream refills within seconds). On the free hosting tier the disk is ephemeral, so persistence would not survive a redeploy anyway.
 - Containment is a local stop flag, not a real enforcement action.
-- Live-stream `time` is `HH:mm:ss` only, so the bridge assumes "today, UTC".
-- Tests cover the bridge (scoring, dedup, adapters, API). The Vue UI is verified by hand in the browser, with no automated UI tests.
+- The control plane is rate-limited, with an optional shared operator token; there are no per-user identities or roles.
+- ATT&CK mapping is by attack type (one technique each), not by behavioural analytics over event sequences.
+- Attack-map positions are illustrative: the source addresses are simulated, so they are placed by address range rather than a geo-IP lookup.
 
 **Next steps toward production**
 - Persist events to a time-series store and replay on restart.
-- Replace the stop flag with a real response integration.
-- Add any technique mapping to `ThreatEvent` and geo-IP enrichment for a 3D attack map.
-- Property-based tests for the scorer, a WebSocket message-contract test, and Playwright smoke tests for the UI.
-- AuthN/Z on the control endpoints (`/api/contain`, `/api/demo/*`).
+- Replace the stop flag with a real response integration (e.g. a SOAR playbook or firewall dynamic address group) behind the same `/api/contain` contract.
+- Per-user AuthN/Z (SSO/OIDC) with viewer vs. operator roles, and an audit log of containment actions.
+- Sequence-aware detections that chain ATT&CK tactics into a kill-chain view.
+- A real geo-IP service behind the existing geo enrichment stage.
+
+**Already addressed from the earlier list:** MITRE ATT&CK mapping, a 3D attack map with origin geo enrichment, full ISO-8601 timestamps from AttackSim, property-based scorer tests, a WebSocket contract test, an automated Playwright UI smoke test in CI, and a guarded control plane.
 
 ---
 

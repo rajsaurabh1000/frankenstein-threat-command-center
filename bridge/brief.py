@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import os
 import re
 import time
@@ -8,12 +9,30 @@ from datetime import datetime, timezone
 
 import httpx
 
+from geo import is_internal
+from mitre import TACTIC_ACTIONS, technique_for
 from models import AiInsights, ScoredEvent, TelemetrySource, ThreatLevel
 
 BRIEF_MIN_INTERVAL = 20.0
 # A posture change (e.g. HIGH -> CRITICAL) regenerates immediately, so the brief never quotes a
 # different level than the gauge; this floor only guards against flapping at a threshold.
 BRIEF_LEVEL_CHANGE_MIN_INTERVAL = 3.0
+
+
+def _is_external(ip: str) -> bool:
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return not is_internal(ip)
+
+
+def _top_external_origin(events: list[ScoredEvent]) -> str:
+    """Most frequent source, preferring external addresses: you block attackers, not your own LAN."""
+    ips = [e.event.source_ip for e in events if e.event.source_ip]
+    external = [ip for ip in ips if _is_external(ip)]
+    pool = external or ips
+    return Counter(pool).most_common(1)[0][0] if pool else "unknown"
 
 
 def _threat_events(events: list[ScoredEvent]) -> list[ScoredEvent]:
@@ -146,10 +165,13 @@ class BriefGenerator:
         recent = events[-20:]
         types = Counter(item.event.attack_type for item in recent)
         top = types.most_common(3)
-        origins = Counter(item.event.source_ip for item in recent if item.event.source_ip)
-        top_origin = origins.most_common(1)[0][0] if origins else "unknown"
+        top_origin = _top_external_origin(recent)
         severity_peak = max(item.event.raw_severity for item in recent)
-        campaign = ", ".join(f"{name} ({count})" for name, count in top)
+        def label(name: str) -> str:
+            tech = technique_for(name)
+            return f"{name} [{tech.id}]" if tech else name
+
+        campaign = ", ".join(f"{label(name)} ({count})" for name, count in top)
 
         return (
             f"Executive brief — global posture {global_level.value} "
@@ -188,8 +210,13 @@ class BriefGenerator:
         ]
         focal = max(critical, key=lambda x: x.risk_score, default=recent[-1])
         focal_attack = focal.event.attack_type
-        origins = Counter(e.event.source_ip for e in recent if e.event.source_ip)
-        top_origin = origins.most_common(1)[0][0] if origins else "unknown"
+        top_origin = _top_external_origin(recent)
+        top_tech = technique_for(top_type)
+        tactic_action = (
+            f"{top_tech.tactic} ({top_tech.id}): {TACTIC_ACTIONS[top_tech.tactic]}"
+            if top_tech and top_tech.tactic in TACTIC_ACTIONS
+            else None
+        )
 
         if global_level in (ThreatLevel.CRITICAL, ThreatLevel.HIGH):
             playbook = "Critical containment & identity hardening"
@@ -199,7 +226,7 @@ class BriefGenerator:
             )
             recs = [
                 f"Block or rate-limit egress from cluster {top_origin} pending verification.",
-                "Force step-up authentication on privileged paths and admin consoles.",
+                tactic_action or "Force step-up authentication on privileged paths and admin consoles.",
                 "Isolate affected segments and replay deduplicated events into SIEM export.",
             ]
         elif global_level is ThreatLevel.ELEVATED:
@@ -207,7 +234,7 @@ class BriefGenerator:
             rationale = "Mixed techniques detected — expand hunt queries before auto-containment."
             recs = [
                 f"Prioritize hunt for {top_type} patterns ({top_count} recent hits).",
-                "Enable temporary geo-fencing on authentication endpoints.",
+                tactic_action or "Enable temporary geo-fencing on authentication endpoints.",
                 "Refresh executive brief and validate AI recommendations with tier-2 analyst.",
             ]
         else:
@@ -224,9 +251,11 @@ class BriefGenerator:
             0.55 + (global_score / 200.0) + (0.08 if len(critical) else 0),
         )
 
+        focal_tech = technique_for(focal_attack)
+        attack_ref = f"ATT&CK {focal_tech.id} {focal_tech.name}, {focal_tech.tactic}; " if focal_tech else ""
         focal_insight = (
             f"AI read: {focal_attack} from {focal.event.source_ip} "
-            f"(risk {int(focal.risk_score)}, sev {focal.event.raw_severity}/10) "
+            f"({attack_ref}risk {int(focal.risk_score)}, sev {focal.event.raw_severity}/10) "
             f"aligns with dominant {top_type} activity — likely coordinated probing "
             f"against perimeter assets."
         )
@@ -249,7 +278,8 @@ class BriefGenerator:
         for item in events[-12:]:
             event = item.event
             lines.append(
-                f"{event.attack_type}|{event.source_ip}|sev{event.raw_severity}|"
+                f"{event.attack_type}"
+                f"{'/' + event.technique.id if event.technique else ''}|{event.source_ip}|sev{event.raw_severity}|"
                 f"risk{int(item.risk_score)}|{item.threat_level.value}"
             )
         return (

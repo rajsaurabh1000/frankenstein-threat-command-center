@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"  # 1.1: optional MITRE ATT&CK `technique` and origin `geo` (additive, backward compatible)
 
 
 class ThreatLevel(str, Enum):
@@ -33,6 +33,26 @@ class HealthStatus(str, Enum):
     DISABLED = "DISABLED"
 
 
+class AttackTechnique(BaseModel):
+    """MITRE ATT&CK (Enterprise) technique attached during enrichment."""
+
+    id: str
+    name: str
+    tactic: str
+    url: str
+
+
+class GeoLocation(BaseModel):
+    """Origin (or target) location for the attack map. ``illustrative`` = derived from a simulated address range."""
+
+    city: str
+    country: str
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)
+    internal: bool = False
+    illustrative: bool = True
+
+
 class ThreatEvent(BaseModel):
     """Canonical security-event contract (v1). Adapters map upstream sources here."""
 
@@ -46,6 +66,8 @@ class ThreatEvent(BaseModel):
     status: str = "Detected"
     raw_severity: int = Field(ge=1, le=10, default=5)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    technique: AttackTechnique | None = None
+    geo: GeoLocation | None = None
 
 
 class ScoredEvent(BaseModel):
@@ -77,6 +99,7 @@ class ThreatState(BaseModel):
     containment_status: Literal["ACTIVE", "CONTAINED"]
     event_count: int
     health: SystemHealth
+    critical_alarm: bool = False  # critical landscape (drives the alarm), not a severity flash
 
 
 class AiInsights(BaseModel):

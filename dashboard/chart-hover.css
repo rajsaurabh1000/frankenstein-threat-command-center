@@ -1,0 +1,135 @@
+/*
+ * Interactive donuts (Threat level, Attack vectors). Hover, focus or tap a slice or its legend
+ * row: the slice pops out, the others dim, the centre shows its share and count, and a caption
+ * spells out the full label.
+ */
+.pie-block--interactive .pie-slice {
+  cursor: pointer;
+  outline: none;
+  transform-box: view-box;
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+.pie-block--interactive .pie-slice:hover {
+  opacity: 1;
+}
+
+.pie-block--interactive .pie-slice.is-active {
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.55)) brightness(1.12);
+}
+
+.pie-block--interactive .pie-slice.is-dim {
+  opacity: 0.28;
+}
+
+.pie-block--interactive .pie-center-num {
+  transition: fill 0.2s ease;
+}
+
+.pie-caption {
+  align-self: stretch;
+  margin-top: 0.5rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 1.6rem;
+  margin: 0;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  color: #64748b;
+  text-align: center;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.pie-caption--active {
+  color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.pie-caption strong {
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.pie-caption-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.pie-block--interactive .legend li {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.12rem 0.3rem;
+  margin: 0 -0.3rem;
+  transition: background 0.18s ease, opacity 0.18s ease;
+}
+
+.pie-block--interactive .legend li.is-active {
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.pie-block--interactive .legend li.is-active span:nth-child(2) {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.pie-block--interactive .legend li.is-dim {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pie-block--interactive .pie-slice { transition: none; }
+}
+
+/* Let the popped-out slice draw past the 100x100 viewBox instead of being clipped. */
+.pie-block--interactive .pie-svg {
+  overflow: visible;
+}
+
+/*
+ * Pre-existing overflow fix: the donut was a fixed 220px, so in the 288-328px tiles at
+ * 1280-1440px screens the legend ran up to ~60px past the tile edge. Size it to the tile.
+ */
+.app-shell--prod .pie-block--interactive .pie-svg--tile {
+  width: clamp(112px, 50%, 220px);
+}
+
+.pie-block--interactive .legend {
+  min-width: 0;
+}
+
+/* MITRE ATT&CK technique chips (live queue rows, attack-vector caption). */
+.mitre-chip {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.38rem;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  background: rgba(14, 116, 144, 0.22);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: #7dd3fc;
+  text-decoration: none;
+  vertical-align: 0.08em;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+a.mitre-chip:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #e0f2fe;
+}
+
+.mitre-chip--inline {
+  margin: 0 0.1rem 0 0.35rem;
+}

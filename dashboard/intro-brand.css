@@ -1,0 +1,140 @@
+/* Palo Alto Networks brand bar + tech-stack strip for the Lumi intro ("Problem, architecture, and approach"). */
+.intro-brandbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: -0.35rem 0 1.1rem;
+  padding: 0 0 0.95rem;
+}
+
+.intro-brandbar::after {
+  /* Palo Alto orange accent line */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #fa582d 0%, rgba(250, 88, 45, 0.55) 35%, rgba(250, 88, 45, 0) 100%);
+}
+
+.intro-brand-logo {
+  display: block;
+  height: 28px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.intro-brand-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(148, 163, 184, 0.35);
+  flex-shrink: 0;
+}
+
+.intro-brand-product {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.intro-brand-product strong {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.intro-brand-product span {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fa582d;
+}
+
+.intro-brand-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.intro-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.6);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.intro-chip--live {
+  border-color: rgba(61, 214, 140, 0.45);
+  color: #bbf7d0;
+}
+
+.intro-chip--live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3dd68c;
+  animation: intro-live 1.8s ease-out infinite;
+}
+
+@keyframes intro-live {
+  0% { box-shadow: 0 0 0 0 rgba(61, 214, 140, 0.7); }
+  100% { box-shadow: 0 0 0 7px rgba(61, 214, 140, 0); }
+}
+
+.intro-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.9rem 0 0.2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.intro-stack li {
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.intro-stack b {
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+@media (max-width: 900px) {
+  .intro-brand-chips {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .intro-brand-divider,
+  .intro-brand-product {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-chip--live i { animation: none; }
+}

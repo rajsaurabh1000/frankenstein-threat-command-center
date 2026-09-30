@@ -1,5 +1,6 @@
 """End-to-end through the FastAPI app: inject -> ingest -> score -> contain -> stop flag."""
 
+import re
 import time
 
 import pytest
@@ -33,8 +34,14 @@ def test_critical_scenario_flows_through_real_ingest_path(client):
     res = client.post("/api/demo/scenario", json={"scenario": "critical"})
     assert res.status_code == 200 and res.json()["events_injected"] == 3
     assert wait_for(lambda: client.get("/api/state").json()["threat_level"] == "CRITICAL")
+    assert client.get("/api/state").json()["critical_alarm"] is True
     events = client.get("/api/state").json()["recent_events"]
     assert any(e["event"]["attack_type"] == "SQL Injection" and e["event"]["source"] == "live_stream" for e in events)
+    sqli = next(e for e in events if e["event"]["attack_type"] == "SQL Injection")
+    assert sqli["event"]["technique"]["id"] == "T1190"  # MITRE ATT&CK enrichment stage
+    assert sqli["event"]["schema_version"] == "1.1"
+    assert sqli["event"]["geo"]["country"] and sqli["event"]["geo"]["internal"] is False  # origin geo enrichment
+    assert client.get("/api/platform").json()["geo_target"]["city"].startswith("Oregon")
 
 
 def test_unknown_scenario_is_rejected(client):
@@ -56,3 +63,4 @@ def test_mitigate_alias_matches_contain(client):
 def test_template_brief_without_llm(client):
     brief = client.get("/api/brief").json()
     assert brief["mode"] == "template" and brief["text"]
+    assert re.search(r"\[T\d{4}(\.\d{3})?\]", brief["text"])  # techniques quoted with ATT&CK IDs
